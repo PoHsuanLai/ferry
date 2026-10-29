@@ -3,17 +3,18 @@
 //! its journal and read back by path and id, a pass cut short and resumed, a restart that keeps
 //! the tree, a folder moved, an anchor that expired, and access not given yet.
 
+use ferry_fake_graph::FakeGraph;
+use ferry_sync::{
+    Blob, ByteRange, ChangePage, Cursor, Folders, ItemKind, ItemPath, PutItem, PutRefused, Quota,
+    RemoteId, RemoteVersion, Replica, ReplicaError, RetryAfter,
+};
 use porter_capability::StorageCap;
-use porter_fake_servers::{FakeGoogle, FakeGraph};
+use porter_fake_servers::FakeGoogle;
 use porter_http::http::header::{AUTHORIZATION, HeaderValue};
 use porter_http::http::{Request, Response};
 use porter_http::{Http, HttpError};
 use porter_http_reqwest::ReqwestHttp;
 use porter_ids::{UnixSeconds, WebUrl};
-use porter_sync::{
-    Blob, ByteRange, ChangePage, Cursor, Folders, ItemKind, ItemPath, PutItem, PutRefused, Quota,
-    RemoteId, RemoteVersion, Replica, ReplicaError, RetryAfter,
-};
 use std::future::Future;
 use std::sync::atomic::{AtomicUsize, Ordering};
 use syncd::datasets::drive::{DriveJournal, DriveReplica, Listed, list_once};
@@ -57,7 +58,7 @@ fn graph(base: &str, page: usize, folders: Folders) -> Graph {
         Bearer(ReqwestHttp::new()),
         &base,
         "",
-        porter_sync::Clock::fixed(NOW),
+        ferry_sync::Clock::fixed(NOW),
     )
     .with_root(storage_graph::Root::Drive)
     .with_page(page)
@@ -70,7 +71,7 @@ fn google(base: &str, page: usize, folders: Folders) -> Google {
         Bearer(ReqwestHttp::new()),
         &base,
         "",
-        porter_sync::Clock::fixed(NOW),
+        ferry_sync::Clock::fixed(NOW),
     )
     .with_root(storage_gdrive::Root::Drive)
     .with_page(page)
@@ -101,7 +102,7 @@ impl<R: Replica> Replica for Cut<R> {
     async fn put(
         &self,
         item: PutItem,
-        base: porter_sync::BaseVersion,
+        base: ferry_sync::BaseVersion,
     ) -> Result<(RemoteId, RemoteVersion), PutRefused> {
         self.inner.put(item, base).await
     }
@@ -109,7 +110,7 @@ impl<R: Replica> Replica for Cut<R> {
     async fn remove(
         &self,
         item: &RemoteId,
-        base: porter_sync::BaseVersion,
+        base: ferry_sync::BaseVersion,
     ) -> Result<RemoteVersion, PutRefused> {
         self.inner.remove(item, base).await
     }
@@ -144,7 +145,7 @@ fn names(journal: &DriveJournal, at: &str) -> Vec<(String, bool)> {
 }
 
 /// A drive with a folder tree and files at two depths.
-fn plant(graph: &porter_fake_servers::Running<porter_fake_servers::GraphHandle>) {
+fn plant(graph: &porter_fake_servers::Running<ferry_fake_graph::GraphHandle>) {
     graph.put_root_file("Docs/a.txt", b"a");
     graph.put_root_file("Docs/Sub/b.txt", b"bb");
     graph.put_root_file("c.txt", b"ccc");
@@ -332,7 +333,7 @@ async fn access_not_given_yet_is_its_own_state_and_lists_nothing() {
     let journal = DriveJournal::open(&scratch.path().join("storage_drive.sqlite")).expect("open");
     let base = WebUrl::parse("https://graph.example.test").expect("url");
     let replica =
-        storage_graph::GraphReplica::new(NotGranted, &base, "", porter_sync::Clock::fixed(NOW))
+        storage_graph::GraphReplica::new(NotGranted, &base, "", ferry_sync::Clock::fixed(NOW))
             .with_root(storage_graph::Root::Drive);
     let pass = list_once(&journal, &replica).await.expect("pass");
     assert_eq!((pass.outcome, pass.pages), (Listed::NeedsConsent, 0));

@@ -4,7 +4,7 @@
 //! Events are kept as the JSON a test gives; the fake adds `id`, `changeKey` and
 //! `lastModifiedDateTime`. Behind the same bearer as the drive.
 
-use crate::http::{Request, Response};
+use porter_fake_servers::http::{Request, Response};
 use serde_json::{Value, json};
 
 /// One calendar.

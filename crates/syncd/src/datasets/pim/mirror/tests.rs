@@ -2,11 +2,11 @@ use super::*;
 use crate::datasets::pim::items_in;
 use crate::journal::Journal;
 use crate::testing::scratch;
-use porter_ids::UnixSeconds;
-use porter_sync::{
+use ferry_sync::{
     Anchor, BaseVersion, Conflict, RemoteId, RemoteSide, RemoteVersion, StoredAnchor,
     StoredConflict,
 };
+use porter_ids::UnixSeconds;
 
 pub(super) fn ics(uid: &str, summary: &str) -> Blob {
     Blob(
@@ -169,8 +169,8 @@ async fn nothing_outside_the_collection_can_be_read_or_discarded() {
     assert!(dir.path().join("secret").exists());
 }
 
-fn row(local: &str, hash: Option<&ContentHash>, state: ItemState) -> porter_sync::JournalItem {
-    porter_sync::JournalItem {
+fn row(local: &str, hash: Option<&ContentHash>, state: ItemState) -> ferry_sync::JournalItem {
+    ferry_sync::JournalItem {
         local: LocalId(local.to_owned()),
         remote: Some(RemoteId(format!("/c/{local}"))),
         path: path(local),

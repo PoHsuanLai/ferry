@@ -16,13 +16,13 @@ mod tests;
 
 use crate::dataset::{Dataset, DatasetError, Direction, replica_hash};
 use crate::journal::{Journal, JournalError, Op};
-use porter_ids::UnixSeconds;
-use porter_ids::clock::Clock;
-use porter_sync::{
+use ferry_sync::{
     Acknowledgement, BaseVersion, Blob, ByteRange, Conflict, ItemState, JournalItem, LocalId,
     MassDelete, Quota, RemoteId, RemoteSide, RemoteVersion, Replica, ReplicaError, RetryAfter,
     StoredConflict, StoredTombstone, Tombstone, TombstoneOrigin,
 };
+use porter_ids::UnixSeconds;
+use porter_ids::clock::Clock;
 use std::sync::atomic::{AtomicBool, Ordering};
 
 /// Why a cycle stopped without finishing; the next cycle starts over from the journal.
@@ -106,7 +106,7 @@ pub(crate) fn halt(error: ReplicaError) -> Halt {
         ReplicaError::Unauthorized => Outcome::Unauthorized,
         ReplicaError::NeedsConsent => Outcome::NeedsConsent,
         ReplicaError::Transient(after) => Outcome::Retry(after),
-        // anchor expired, gone, and a failure a later porter-sync adds
+        // anchor expired, gone, and a failure a later ferry-sync adds
         _ => Outcome::Gone,
     })
 }
@@ -212,7 +212,7 @@ impl<R: Replica, D: Dataset, K: Clock> Engine<R, D, K> {
         &self,
         row: &JournalItem,
         remote: &RemoteId,
-        hash: Option<&porter_sync::ContentHash>,
+        hash: Option<&ferry_sync::ContentHash>,
     ) -> Result<Compared, Halt> {
         if matches!(row.state, ItemState::PendingRemove | ItemState::Fetching) {
             return Ok(Compared::Differs(None));

@@ -12,8 +12,8 @@ use crate::scheduler::{
 use crate::service::{
     Confirm, ConfirmError, Event, Handle, Nudge, Settle, SettleError, StatusSnapshot,
 };
+use ferry_sync::{MassDelete, Quota, Replica, StoredConflict};
 use porter_ids::clock::Clock;
-use porter_sync::{MassDelete, Quota, Replica, StoredConflict};
 use std::sync::Arc;
 use std::time::Duration;
 use tokio::sync::{Notify, watch};

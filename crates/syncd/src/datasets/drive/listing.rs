@@ -5,8 +5,8 @@
 
 use super::journal::DriveJournal;
 use crate::journal::JournalError;
+use ferry_sync::{Cursor, Folders, More, Replica, ReplicaError, RetryAfter};
 use porter_http::Http;
-use porter_sync::{Cursor, Folders, More, Replica, ReplicaError, RetryAfter};
 use std::sync::Arc;
 use std::time::Duration;
 use storage_gdrive::GdriveReplica;
@@ -105,7 +105,7 @@ pub async fn list_once<R: DriveReplica>(
                     ReplicaError::Gone => Listed::Gone,
                     // A listing from the start that the feed calls expired: try again later.
                     ReplicaError::AnchorExpired => Listed::Retry(RetryAfter(30)),
-                    // a failure a later porter-sync adds: tried again later
+                    // a failure a later ferry-sync adds: tried again later
                     _ => Listed::Retry(RetryAfter(30)),
                 };
                 return Ok(pass);

@@ -7,13 +7,13 @@ use crate::common;
 use crate::googlerig as google_rig;
 
 use common::{ACCESS_DENIED, INVALID_ARGS, NO_FITTING, PhotosGrant, error_name};
+use ferry_bus::{
+    PICKER_ERROR_NO_SUCH_SESSION, PICKER_ERROR_NOT_YET, PICKER_PICKED, PICKER_WAITING,
+    PhotosPickerProxy,
+};
 use google_rig::{
     PICKER_BEARER, Rig, SECRET_ACCESS, SECRET_REFRESH, SEGMENT, client_of, rig, rig_picker_only,
     serve_picker,
-};
-use porter_dbus::sync::{
-    PICKER_ERROR_NO_SUCH_SESSION, PICKER_ERROR_NOT_YET, PICKER_PICKED, PICKER_WAITING,
-    PhotosPickerProxy,
 };
 use porter_fake_servers::google::Pick;
 use std::pin::Pin;

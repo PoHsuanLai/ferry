@@ -8,13 +8,13 @@ use crate::common;
 use crate::googlerig as google_rig;
 
 use common::PhotosGrant;
+use ferry_bus::SyncProxy;
+use ferry_sync::ItemState;
 use google_rig::{
     FILES_DATASET, Media, PICKER_BEARER, Rig, SECRET_ACCESS, SECRET_REFRESH, UPLOAD_BEARER,
     UPLOAD_DATASET, client_of, eventually, rig, rig_picker_only, rig_with,
 };
-use porter_dbus::sync::SyncProxy;
 use porter_fake_servers::google::Pick;
-use porter_sync::ItemState;
 use std::sync::atomic::Ordering;
 use syncd::datasets::photos::google::{
     ALBUM_TITLE, PickerError, PickerState, SLUG, SessionEnd, SessionId,

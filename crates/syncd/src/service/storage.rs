@@ -7,13 +7,13 @@
 //!   sender syncd does not know, is `AccessDenied`, for every method. `SetPaused` is the shell's
 //!   and Settings' only: an app is `AccessDenied` there too.
 //! - A path is absolute and inside one drive's `path`, by the names the drive's items are shown
-//!   by (`porter_drive::naming`). A path on no drive, or not there, is left out of `Items` and
+//!   by (`ferry_drive::naming`). A path on no drive, or not there, is left out of `Items` and
 //!   refused by the actions with `NOT_ON_A_DRIVE`; the drive's own folder is no item, and
-//!   neither is what stays on this computer (`porter_drive::local_only`: the desktop's trash).
+//!   neither is what stays on this computer (`ferry_drive::local_only`: the desktop's trash).
 //! - An item changed here is `waiting`, then `uploading` with its fraction while it is sent; a
 //!   file kept in two versions is `conflict`, and `other` is the other version's path; one the
 //!   drive refused is `error` with the words (`crate::words`).
-//! - `SaveCopy` exports each online document (`porter_drive::Drive::save_copy`) and answers each
+//! - `SaveCopy` exports each online document (`ferry_drive::Drive::save_copy`) and answers each
 //!   copy's absolute path; the copy waits to upload beside its document.
 //! - `Watch` joins the caller's connection to those told `DrivesChanged` and `ItemsChanged`
 //!   until it leaves the bus. Each drive's item changes are gathered and sent together at most
@@ -23,17 +23,17 @@ use super::errors::RefusedError;
 use crate::datasets::drive::{DriveEvent, DriveSet, LiveDrive};
 use crate::service::Access;
 use crate::words;
-use porter_callers::{Caller, CallerRole, Callers};
-use porter_dbus::Call;
-use porter_dbus::Details;
-use porter_dbus::sync::STORAGE_PATH;
-use porter_dbus::sync::{
+use ferry_bus::STORAGE_PATH;
+use ferry_bus::{
     DRIVE_KEY_ACCOUNT, DRIVE_KEY_LABEL, DRIVE_KEY_LOCAL, DRIVE_KEY_PATH, DRIVE_KEY_PROVIDER,
     DRIVE_KEY_STATE, DRIVE_KEY_TOTAL, DRIVE_KEY_USED, DRIVE_KEY_WORDS, ITEM_KEY_FRACTION,
     ITEM_KEY_KEPT, ITEM_KEY_KIND, ITEM_KEY_OTHER, ITEM_KEY_STATE, ITEM_KEY_URL, ITEM_KEY_WORDS,
     ItemDetails, ItemKind, ItemState, Refused, Saved, StorageServed, StorageServer,
 };
-use porter_drive::{Node, NodeId, NodeKind, Reason, Status};
+use ferry_drive::{Node, NodeId, NodeKind, Reason, Status};
+use porter_callers::{Caller, CallerRole, Callers};
+use porter_dbus::Call;
+use porter_dbus::Details;
 use std::collections::{BTreeMap, BTreeSet};
 use std::path::{Path, PathBuf};
 use std::pin::Pin;
@@ -84,12 +84,12 @@ fn put(details: &mut Details, key: &str, value: Value<'_>) {
 
 fn state_of(status: &Status) -> ItemState {
     match status.state {
-        porter_drive::ItemState::Downloading => ItemState::Downloading,
-        porter_drive::ItemState::Downloaded => ItemState::Downloaded,
-        porter_drive::ItemState::Waiting => ItemState::Waiting,
-        porter_drive::ItemState::Uploading => ItemState::Uploading,
-        porter_drive::ItemState::Conflict => ItemState::Conflict,
-        porter_drive::ItemState::Error => ItemState::Error,
+        ferry_drive::ItemState::Downloading => ItemState::Downloading,
+        ferry_drive::ItemState::Downloaded => ItemState::Downloaded,
+        ferry_drive::ItemState::Waiting => ItemState::Waiting,
+        ferry_drive::ItemState::Uploading => ItemState::Uploading,
+        ferry_drive::ItemState::Conflict => ItemState::Conflict,
+        ferry_drive::ItemState::Error => ItemState::Error,
         _ => ItemState::Cloud,
     }
 }
@@ -555,8 +555,8 @@ pub fn absolute(drive: &LiveDrive, id: &NodeId) -> Option<PathBuf> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use porter_drive::testing::{MemoryListing, MemorySource};
-    use porter_drive::{Drive, DriveConfig, RemoteId};
+    use ferry_drive::testing::{MemoryListing, MemorySource};
+    use ferry_drive::{Drive, DriveConfig, RemoteId};
     use tokio::sync::broadcast::error::RecvError;
 
     #[tokio::test]

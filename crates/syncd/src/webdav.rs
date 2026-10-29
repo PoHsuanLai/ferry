@@ -6,12 +6,12 @@
 //! and reaches that endpoint's origin only. [`webdav_replica`] builds the replica of a dataset's
 //! folder under that endpoint over them.
 
+use ferry_sync::Clock;
 use porter_client::{Grants, GrantsLink};
 use porter_core::EndpointUrl;
 use porter_core::GrantId;
 use porter_http_relay::{RelayDial, RelayHttp, RelayLimits};
 use porter_ids::WebUrl;
-use porter_sync::Clock;
 use std::sync::Arc;
 use storage_webdav::WebDavReplica;
 

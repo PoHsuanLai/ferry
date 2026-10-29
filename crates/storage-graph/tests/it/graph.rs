@@ -6,15 +6,16 @@
 use crate::common;
 
 use common::{Replica, Server, TOKEN, TcpDial};
-use porter_fake_servers::graph::{CHUNK_UNIT, Knobs};
-use porter_fake_servers::{GraphHandle, Hit};
-use porter_http_relay::{RelayHttp, RelayLimits};
-use porter_ids::{Bytes, WebUrl};
-use porter_sync::Clock;
-use porter_sync::{
+use ferry_fake_graph::GraphHandle;
+use ferry_fake_graph::{CHUNK_UNIT, Knobs};
+use ferry_sync::Clock;
+use ferry_sync::{
     BaseVersion, Blob, ByteRange, Change, Conflict, Cursor, ItemPath, PutItem, PutRefused,
     PutTarget, RemoteId, RemoteSide, RemoteVersion, Replica as _, ReplicaError, RetryAfter,
 };
+use porter_fake_servers::Hit;
+use porter_http_relay::{RelayHttp, RelayLimits};
+use porter_ids::{Bytes, WebUrl};
 use storage_graph::{GraphReplica, Uploads};
 
 fn new_item(path: &str, bytes: &[u8]) -> PutItem {
@@ -41,7 +42,7 @@ fn writes(graph: &GraphHandle) -> Vec<Hit> {
         .collect()
 }
 
-fn upserts(page: &porter_sync::ChangePage) -> Vec<(String, u64)> {
+fn upserts(page: &ferry_sync::ChangePage) -> Vec<(String, u64)> {
     page.changes
         .iter()
         .filter_map(|c| match c {
@@ -274,7 +275,7 @@ async fn a_remote_edit_between_the_listing_and_the_write_is_a_conflict_never_an_
         Err(PutRefused::Conflict(Conflict {
             item: id.clone(),
             base: BaseVersion::At(now),
-            remote: RemoteSide::Deleted(RemoteVersion(porter_sync::DELETED.into())),
+            remote: RemoteSide::Deleted(RemoteVersion(ferry_sync::DELETED.into())),
         }))
     );
 }
@@ -293,7 +294,7 @@ async fn an_expired_anchor_lists_again_and_sends_nothing_a_second_time() {
     loop {
         let page = replica.changes(at).await.expect("page");
         seen.extend(upserts(&page));
-        let done = page.more == porter_sync::More::Done;
+        let done = page.more == ferry_sync::More::Done;
         at = Cursor::At(page.next.clone());
         if done {
             break;
@@ -314,7 +315,7 @@ async fn an_expired_anchor_lists_again_and_sends_nothing_a_second_time() {
     loop {
         let page = fresh.changes(cursor).await.expect("page");
         again += upserts(&page).len();
-        if page.more == porter_sync::More::Done {
+        if page.more == ferry_sync::More::Done {
             break;
         }
         cursor = Cursor::At(page.next);

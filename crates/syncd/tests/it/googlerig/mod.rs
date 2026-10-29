@@ -189,7 +189,7 @@ impl Rig {
             settings: quick(),
             network: self.network.clone(),
             owners: Access::default(),
-            clock: porter_sync::Clock::new(porter_ids::clock::SystemClock),
+            clock: ferry_sync::Clock::new(porter_ids::clock::SystemClock),
             nonce: "t1".to_owned(),
             millis: Arc::new(syncd::datasets::photos::ManualMillis::at(1_700_000_000_000)),
         };
@@ -364,7 +364,7 @@ fn placeholder(
             settings: quick(),
             network: network.clone(),
             owners: Access::default(),
-            clock: porter_sync::Clock::new(porter_ids::clock::SystemClock),
+            clock: ferry_sync::Clock::new(porter_ids::clock::SystemClock),
             nonce: "t1".to_owned(),
             millis: Arc::new(syncd::datasets::photos::ManualMillis::at(1_700_000_000_000)),
         },

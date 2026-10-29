@@ -11,8 +11,8 @@ use super::hlc::DeviceId;
 use super::library::{PhotoLibrary, manifest_dir};
 use super::originals::blocking;
 use crate::dataset::{Dataset, DatasetError, DatasetId, fingerprint};
+use ferry_sync::{Blob, ConflictRule, ItemPath, LocalId, Scanned};
 use porter_ids::Bytes;
-use porter_sync::{Blob, ConflictRule, ItemPath, LocalId, Scanned};
 use std::io;
 
 fn fail(what: &str, why: impl std::fmt::Display) -> DatasetError {
@@ -234,7 +234,7 @@ mod tests {
         assert_eq!(metadata.id().as_str(), "photos_metadata");
         assert_eq!(metadata.conflict_rule(), ConflictRule::LastWriterPerField);
         assert_eq!(
-            porter_sync::DatasetKind::PhotosMetadata.conflict_rule(),
+            ferry_sync::DatasetKind::PhotosMetadata.conflict_rule(),
             metadata.conflict_rule()
         );
     }

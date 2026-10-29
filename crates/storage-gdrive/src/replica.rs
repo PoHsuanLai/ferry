@@ -1,20 +1,20 @@
-//! [`GdriveReplica`]: porter-sync's [`Replica`] over a folder of Drive's app data folder, or of
+//! [`GdriveReplica`]: ferry-sync's [`Replica`] over a folder of Drive's app data folder, or of
 //! My Drive.
 
 use crate::addr::{Addr, FILE_FIELDS, Root};
 use crate::json::{About, File};
 use crate::refuse::{export_error, read_error};
+use ferry_sync::Clock;
+use ferry_sync::status::unreached;
+use ferry_sync::{
+    BaseVersion, Blob, ByteRange, ChangePage, Cursor, ExportError, Folders, PutItem, PutRefused,
+    Quota, RemoteId, RemoteVersion, Replica, ReplicaError, RetryAfter,
+};
 use porter_capability::{Access, Delta, HashKind, StorageCap, StorageScope};
 use porter_http::http::header::{ACCEPT, HeaderValue, RANGE};
 use porter_http::http::{Method, Request, Response};
 use porter_http::{Http, request};
 use porter_ids::{Bytes, WebUrl};
-use porter_sync::Clock;
-use porter_sync::status::unreached;
-use porter_sync::{
-    BaseVersion, Blob, ByteRange, ChangePage, Cursor, ExportError, Folders, PutItem, PutRefused,
-    Quota, RemoteId, RemoteVersion, Replica, ReplicaError, RetryAfter,
-};
 use std::sync::{Mutex, MutexGuard, PoisonError};
 
 /// How many items a page asks for unless told otherwise.

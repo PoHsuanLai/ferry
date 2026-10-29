@@ -1,0 +1,25 @@
+[package]
+name = "ferry-bus"
+description = "ferry's D-Bus interfaces, each written once under porter-dbus's `#[bus_interface]`: org.quire.Sync1 (syncd's datasets), org.quire.Storage1 (the drives shown in Files) and, behind the `photos-picker` feature, org.quire.Photos1.Picker, with their bus names, object paths, option keys and row codecs."
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+rust-version.workspace = true
+repository.workspace = true
+publish.workspace = true
+
+[dependencies]
+porter-dbus = { workspace = true }
+porter-dbus-macros = { workspace = true }
+porter-ids = { workspace = true }
+serde = { workspace = true }
+zbus = { workspace = true }
+
+[features]
+# The Photos Picker's proxy and interface (`org.quire.Photos1.Picker`). Off by default: no Photos
+# app ships in v1, so the default bus surface does not declare it. syncd's feature of the same
+# name turns it on for the object it serves.
+photos-picker = []
+
+[lints]
+workspace = true

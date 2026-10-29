@@ -9,15 +9,15 @@ use crate::addr::{FILE_FIELDS, names_of};
 use crate::json::File;
 use crate::refuse::write_error;
 use crate::replica::GdriveReplica;
-use porter_http::http::header::{ACCEPT, CONTENT_TYPE, HeaderValue};
-use porter_http::http::{Method, Request, Response};
-use porter_http::{Http, request};
-use porter_sync::DELETED;
-use porter_sync::status::{refused, write_unreached};
-use porter_sync::{
+use ferry_sync::DELETED;
+use ferry_sync::status::{refused, write_unreached};
+use ferry_sync::{
     BaseVersion, Conflict, PutItem, PutRefused, PutTarget, RemoteId, RemoteSide, RemoteVersion,
     RetryAfter,
 };
+use porter_http::http::header::{ACCEPT, CONTENT_TYPE, HeaderValue};
+use porter_http::http::{Method, Request, Response};
+use porter_http::{Http, request};
 
 /// Where a write goes.
 #[derive(Debug, Clone, PartialEq, Eq)]

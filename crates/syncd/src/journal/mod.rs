@@ -3,7 +3,7 @@
 //!
 //! Every change is an [`Op`] list applied in one transaction (`apply`), so the engine's steps
 //! are the unit of a crash: either a step's rows are all there or none are. The rows are
-//! porter-sync's values (`porter_sync::journal`); this file only stores them.
+//! ferry-sync's values (`ferry_sync::journal`); this file only stores them.
 
 mod rows;
 mod schema;
@@ -11,7 +11,7 @@ mod schema;
 pub use schema::SCHEMA_VERSION;
 pub(crate) use schema::migrate;
 
-use porter_sync::{
+use ferry_sync::{
     ItemPath, JournalItem, LocalId, RemoteId, StoredAnchor, StoredConflict, StoredTombstone,
 };
 use rusqlite::Connection;

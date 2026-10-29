@@ -11,6 +11,7 @@ publish.workspace = true
 # The binary is found by its file in src/bin; its name and flags are the shell session's, unchanged.
 
 [dependencies]
+ferry-bus = { workspace = true }
 porter-dbus = { workspace = true }
 clap = { workspace = true }
 # `signal` and `io-std`: SIGTERM ends the binary, and it reads its commands from stdin.

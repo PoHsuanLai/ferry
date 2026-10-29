@@ -9,8 +9,8 @@
 use super::cas::{self, ContentId};
 use super::library::{PhotoLibrary, originals_dir};
 use crate::dataset::{Dataset, DatasetError, DatasetId};
+use ferry_sync::{Blob, ConflictRule, ContentHash, ItemPath, LocalId, Scanned};
 use porter_ids::Bytes;
-use porter_sync::{Blob, ConflictRule, ContentHash, ItemPath, LocalId, Scanned};
 use std::io;
 use std::path::Path;
 
@@ -262,7 +262,7 @@ mod tests {
         assert_eq!(originals.id().as_str(), "photos_originals");
         assert_eq!(originals.conflict_rule(), ConflictRule::Impossible);
         assert_eq!(
-            porter_sync::DatasetKind::PhotosOriginals.conflict_rule(),
+            ferry_sync::DatasetKind::PhotosOriginals.conflict_rule(),
             originals.conflict_rule()
         );
     }

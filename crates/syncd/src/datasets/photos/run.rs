@@ -18,7 +18,7 @@ use crate::journal::Journal;
 use crate::paths::{AccountDir, Paths};
 use crate::scheduler::{Network, Settings};
 use crate::service::{Access, DatasetName, Hub};
-use porter_sync::Replica;
+use ferry_sync::Replica;
 use std::sync::Arc;
 use tokio::sync::{Notify, watch};
 use tokio::task::JoinHandle;

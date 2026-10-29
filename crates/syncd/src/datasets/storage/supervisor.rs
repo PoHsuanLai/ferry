@@ -47,13 +47,13 @@ use crate::journal::Journal;
 use crate::paths::AccountDir;
 use crate::scheduler::next_look;
 use crate::service::{Access, DatasetName};
+use ferry_bus::DriveState;
+use ferry_drive::{CacheLimit, Drive, DriveConfig, FreeSpace, ReplicaSource};
+use ferry_drive_fuse::{DriveFs, Mounter, Now};
+use ferry_sync::{DriveWrite, Replica};
 use porter_client::GrantsLink;
 use porter_core::{AppName, Candidate, EndpointUrl};
-use porter_dbus::sync::DriveState;
-use porter_drive::{CacheLimit, Drive, DriveConfig, FreeSpace, ReplicaSource};
-use porter_drive_fuse::{DriveFs, Mounter, Now};
 use porter_ids::WebUrl;
-use porter_sync::{DriveWrite, Replica};
 use sha2::{Digest, Sha256};
 use std::collections::{BTreeMap, BTreeSet};
 use std::sync::Arc;
@@ -485,9 +485,9 @@ where
                 free_space: self.config.free_space,
                 ..DriveConfig::new(wiring.paths.drive_cache_dir(account))
             },
-            Arc::clone(&journal) as Arc<dyn porter_drive::Listing>,
+            Arc::clone(&journal) as Arc<dyn ferry_drive::Listing>,
             Arc::new(ReplicaSource(Arc::clone(&fetch))),
-            Arc::new(ReplicaSource(Arc::clone(&fetch))) as Arc<dyn porter_drive::Sink>,
+            Arc::new(ReplicaSource(Arc::clone(&fetch))) as Arc<dyn ferry_drive::Sink>,
         )
         .await
         .map_err(|e| e.to_string())?;
@@ -831,17 +831,17 @@ fn reconciles(pass: &Result<drive::Pass, crate::journal::JournalError>) -> bool 
 
 /// A drive replica that starts from a tree a journal kept.
 trait WithFolders: Sized {
-    fn with_folders(self, folders: porter_sync::Folders) -> Self;
+    fn with_folders(self, folders: ferry_sync::Folders) -> Self;
 }
 
 impl<H: porter_http::Http> WithFolders for storage_graph::GraphReplica<H> {
-    fn with_folders(self, folders: porter_sync::Folders) -> Self {
+    fn with_folders(self, folders: ferry_sync::Folders) -> Self {
         storage_graph::GraphReplica::with_folders(self, folders)
     }
 }
 
 impl<H: porter_http::Http> WithFolders for storage_gdrive::GdriveReplica<H> {
-    fn with_folders(self, folders: porter_sync::Folders) -> Self {
+    fn with_folders(self, folders: ferry_sync::Folders) -> Self {
         storage_gdrive::GdriveReplica::with_folders(self, folders)
     }
 }
@@ -867,8 +867,8 @@ fn drive_folders(candidates: &[Candidate]) -> BTreeMap<porter_core::AccountId, S
 }
 
 /// The folder name of each `(account, provider, label)`: the provider's name, with the label
-/// after it when a provider has two, a `/` shown as porter-drive shows it, and two that would
-/// still be one name told apart as porter-drive tells a folder's items apart ("OneDrive (Work)",
+/// after it when a provider has two, a `/` shown as ferry-drive shows it, and two that would
+/// still be one name told apart as ferry-drive tells a folder's items apart ("OneDrive (Work)",
 /// "OneDrive (Work) 2"), the account first by id keeping it, so a folder is never shared and
 /// keeps its name across restarts.
 fn folder_names<'a>(
@@ -885,13 +885,13 @@ fn folder_names<'a>(
         .map(
             |(_, provider, label)| match count.get(provider).copied().unwrap_or(0) {
                 0 | 1 => (*provider).to_owned(),
-                _ => porter_drive::naming::shown_base(&format!("{provider} ({label})")),
+                _ => ferry_drive::naming::shown_base(&format!("{provider} ({label})")),
             },
         )
         .collect();
     drives
         .into_iter()
-        .zip(porter_drive::naming::assign(&bases))
+        .zip(ferry_drive::naming::assign(&bases))
         .map(|((account, _, _), folder)| (account, folder))
         .collect()
 }
@@ -924,7 +924,7 @@ impl<T: GrantsLink, G> Drop for StorageSupervisor<T, G> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use porter_sync::RetryAfter;
+    use ferry_sync::RetryAfter;
 
     #[test]
     fn only_a_pass_that_ended_caught_up_reconciles_the_cache() {

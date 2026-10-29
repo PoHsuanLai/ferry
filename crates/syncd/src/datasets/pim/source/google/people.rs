@@ -11,14 +11,14 @@ use super::{Api, SyncCursor, read_error};
 use crate::dataset::fingerprint;
 use crate::datasets::pim::PimKind;
 use crate::datasets::pim::discover::{DiscoverError, Found};
+use ferry_sync::{Clock, DELETED};
+use ferry_sync::{
+    ItemKind, More, RemoteId, RemoteItem, RemoteVersion, ReplicaError, RetryAfter, Tombstone,
+};
 use porter_client::{Grants, GrantsLink};
 use porter_core::EndpointUrl;
 use porter_core::GrantId;
 use porter_ids::{Bytes, WebUrl};
-use porter_sync::{Clock, DELETED};
-use porter_sync::{
-    ItemKind, More, RemoteId, RemoteItem, RemoteVersion, ReplicaError, RetryAfter, Tombstone,
-};
 use serde::Deserialize;
 use std::sync::Arc;
 
@@ -95,11 +95,11 @@ impl<T: GrantsLink + 'static> PimSource for GooglePeopleSource<T> {
 }
 
 /// The file name of a contact: its resource name with the slash made safe.
-fn file_of(person: &Person) -> porter_sync::ItemPath {
+fn file_of(person: &Person) -> ferry_sync::ItemPath {
     let stem = person.resource_name.replace('/', "_");
     match stem.is_empty() {
         true => name_of(&person.resource_name),
-        false => porter_sync::ItemPath(format!("{stem}.vcf")),
+        false => ferry_sync::ItemPath(format!("{stem}.vcf")),
     }
 }
 

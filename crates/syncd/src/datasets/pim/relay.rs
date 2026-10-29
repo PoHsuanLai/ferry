@@ -7,12 +7,12 @@
 //! [`crate::webdav::webdav_replica`] cannot express (it takes a folder below the endpoint), so
 //! the replica is built here over the collection's own URL; the relay only checks the origin.
 
+use ferry_sync::Clock;
 use porter_client::{Grants, GrantsLink};
 use porter_core::EndpointUrl;
 use porter_core::GrantId;
 use porter_http_relay::{RelayDial, RelayHttp, RelayLimits};
 use porter_ids::WebUrl;
-use porter_sync::Clock;
 use std::sync::Arc;
 use storage_webdav::WebDavReplica;
 

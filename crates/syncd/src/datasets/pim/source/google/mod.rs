@@ -36,6 +36,7 @@ pub use tasks::{GoogleTasksFeed, GoogleTasksSource};
 use super::graph::{encode, get, retry_after, unreached};
 use crate::datasets::pim::discover::DiscoverError;
 use crate::datasets::pim::relay::pim_http;
+use ferry_sync::ReplicaError;
 use porter_client::{Grants, GrantsLink};
 use porter_core::EndpointUrl;
 use porter_core::GrantId;
@@ -43,7 +44,6 @@ use porter_http::HttpError;
 use porter_http::http::Response;
 use porter_http_relay::{RelayDial, RelayHttp};
 use porter_ids::{UnixSeconds, WebUrl};
-use porter_sync::ReplicaError;
 use serde::Deserialize;
 use serde::de::DeserializeOwned;
 use sha2::{Digest, Sha256};
@@ -204,10 +204,10 @@ mod tests {
         let cases = [
             (401, "", E::Unauthorized),
             (403, denied, E::Unauthorized),
-            (403, limited, E::Transient(porter_sync::RetryAfter(7))),
+            (403, limited, E::Transient(ferry_sync::RetryAfter(7))),
             (404, "", E::Gone),
-            (429, "", E::Transient(porter_sync::RetryAfter(7))),
-            (503, "", E::Transient(porter_sync::RetryAfter(7))),
+            (429, "", E::Transient(ferry_sync::RetryAfter(7))),
+            (503, "", E::Transient(ferry_sync::RetryAfter(7))),
         ];
         for (status, body, want) in cases {
             assert_eq!(

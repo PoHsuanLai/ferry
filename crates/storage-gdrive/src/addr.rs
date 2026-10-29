@@ -2,9 +2,9 @@
 //! they take, and the dataset's folder below the root the replica was given (the app data folder
 //! or My Drive).
 
+use ferry_sync::ItemPath;
 use porter_ids::percent::encode_unreserved;
 use porter_ids::{Origin, WebUrl};
-use porter_sync::ItemPath;
 
 /// The fields every file answer is asked for.
 pub const FILE_FIELDS: &str = "id,name,mimeType,parents,version,md5Checksum,size,trashed";

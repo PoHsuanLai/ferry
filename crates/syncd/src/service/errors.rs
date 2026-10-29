@@ -4,10 +4,10 @@
 //! client classifies it as it does a bus's refusal. Written by hand, as accountd's: the
 //! `DBusError` derive names every non-refusal `org.freedesktop.zbus.Error`.
 
-use porter_dbus::accounts::refusal_error_name;
 #[cfg(feature = "photos-picker")]
-use porter_dbus::sync::{PICKER_ERROR_NO_SUCH_SESSION, PICKER_ERROR_NOT_YET};
-use porter_dbus::sync::{SYNC_ERROR_NO_SUCH_CONFLICT, SYNC_ERROR_NOTHING_HELD, SYNC_ERROR_PAUSED};
+use ferry_bus::{PICKER_ERROR_NO_SUCH_SESSION, PICKER_ERROR_NOT_YET};
+use ferry_bus::{SYNC_ERROR_NO_SUCH_CONFLICT, SYNC_ERROR_NOTHING_HELD, SYNC_ERROR_PAUSED};
+use porter_dbus::accounts::refusal_error_name;
 use porter_wire::Refusal;
 use zbus::DBusError;
 use zbus::fdo;

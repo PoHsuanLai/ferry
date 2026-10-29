@@ -7,12 +7,12 @@
 //! [`gdrive_replica`] builds the replica of a dataset's folder in the account's app data folder.
 
 use crate::webdav::BuildError;
+use ferry_sync::Clock;
 use porter_client::{Grants, GrantsLink};
 use porter_core::EndpointUrl;
 use porter_core::GrantId;
 use porter_http_relay::{RelayDial, RelayHttp, RelayLimits};
 use porter_ids::WebUrl;
-use porter_sync::Clock;
 use std::sync::Arc;
 use storage_gdrive::GdriveReplica;
 

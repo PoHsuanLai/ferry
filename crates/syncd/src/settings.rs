@@ -31,11 +31,11 @@ use ds_settings::schema::{
     ActionLabel, ActionWeight, AgentSetting, Exposure, Help, KeyKind, KeyPath, KeySpec, Label,
     LiveAction, Note, Page, Section, WordLabels,
 };
+use ferry_drive::CacheLimit;
 use porter_callers::{CallerRole, Callers};
 use porter_capability::Toggle;
 use porter_core::AccountId;
 use porter_core::{Account, Family};
-use porter_drive::CacheLimit;
 use porter_families::set::ProviderNames;
 use porter_service_core::registry::Registry;
 use porter_wire::ParentWindow;
@@ -328,7 +328,7 @@ fn account_keys(account: &Account, names: &ProviderNames, files: FilesRow) -> Ve
         );
         row.note = files
             .short_of_room
-            .then(|| Note(crate::words::reason(porter_drive::Reason::NoRoomForAll).to_owned()));
+            .then(|| Note(crate::words::reason(ferry_drive::Reason::NoRoomForAll).to_owned()));
         keys.push(row);
     }
     keys.push(spec(

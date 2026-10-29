@@ -5,8 +5,8 @@
 //! trailing slash on a folder), so every href is decoded and encoded again the one way before it
 //! is compared or kept.
 
+use ferry_sync::{ItemPath, RemoteId};
 use porter_ids::WebUrl;
-use porter_sync::{ItemPath, RemoteId};
 
 /// The dataset's folder on the server.
 #[derive(Debug, Clone, PartialEq, Eq)]

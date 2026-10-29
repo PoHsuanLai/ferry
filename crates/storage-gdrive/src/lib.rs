@@ -1,5 +1,5 @@
 //! The Google Drive replica (design/31 §6.1, lane google-drive): [`GdriveReplica`] implements
-//! porter-sync's `Replica` over a folder of Drive's app data folder (`spaces=appDataFolder`, the
+//! ferry-sync's `Replica` over a folder of Drive's app data folder (`spaces=appDataFolder`, the
 //! scope `drive.appdata`) or, given [`Root::Drive`], of My Drive (`spaces=drive`, the user's own
 //! corpus, no shared drives; the scope `drive`). In My Drive, folders are items too, and Google's
 //! own documents and shortcuts are items that open online (`ItemKind::Online`, with the Office
@@ -11,16 +11,16 @@
 //!   last page's anchor is `changes:<start>`. A token Drive refuses (`400`, `404`, `410` on a
 //!   resumed anchor) is `AnchorExpired`. A change names a file by id and parent id, so paths are
 //!   built from the folders seen (and asked for when one is not). The folders seen are a
-//!   [`porter_sync::Folders`] a dataset may keep ([`GdriveReplica::folders`]) and hand back
+//!   [`ferry_sync::Folders`] a dataset may keep ([`GdriveReplica::folders`]) and hand back
 //!   ([`GdriveReplica::with_folders`]).
 //! - **Writes** are checked first: a new file looks for its name in the parent (a name already
 //!   there is a `Conflict`: Drive allows two files of one name, this replica does not make
 //!   them), a changed one or a removal reads the file's `version` and compares it with the base
 //!   (a stale base is a `Conflict`, never an overwrite). Drive documents no conditional update,
 //!   so another writer can still slip in between the check and the write: the window is one
-//!   round trip (FINDINGS). A file up to [`SIMPLE_MAX`] bytes is one multipart request; a larger
+//!   round trip (porter's FINDINGS.md). A file up to [`SIMPLE_MAX`] bytes is one multipart request; a larger
 //!   one goes in a resumable session, in chunks of a multiple of [`CHUNK_UNIT`] (256 KiB).
-//! - **Whole-drive writes** ([`porter_sync::DriveWrite`], in My Drive): a folder or a file made
+//! - **Whole-drive writes** ([`ferry_sync::DriveWrite`], in My Drive): a folder or a file made
 //!   in a parent by id, new content for a file by id, a rename or move and the trash as
 //!   `files.update` (never `files.delete`), each checked against the file's `version` first; a
 //!   large file in a resumable session that a new replica resumes ([`accepts_name`]: Drive
@@ -34,10 +34,10 @@
 //! - **Version** is Drive's `version`, which grows with every change to the file (a rename too).
 //!   There is no ETag to keep.
 //!
-//! The crate is pure: no runtime and no socket. It keeps its own vendor error reasons and wire reading on top of porter-sync's
-//! `status` and dates its tombstones with porter-sync's `Clock`. Every
+//! The crate is pure: no runtime and no socket. It keeps its own vendor error reasons and wire reading on top of ferry-sync's
+//! `status` and dates its tombstones with ferry-sync's `Clock`. Every
 //! endpoint, field and status is written from Google's documentation, without network access:
-//! unverified (FINDINGS).
+//! unverified (porter's FINDINGS.md).
 
 mod addr;
 mod drive;

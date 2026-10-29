@@ -6,7 +6,7 @@
 use crate::common;
 
 use common::{Replica, Server};
-use porter_sync::{
+use ferry_sync::{
     BaseVersion, Content, DriveWrite, Place, Progress, PutRefused, RemoteSide, Session, Unheard,
     Upload, UploadTo, Written,
 };
@@ -328,7 +328,7 @@ async fn look_says_what_the_drive_has_and_the_path_limit_is_onedrives() {
     let found = replica.look(&work.id).await.expect("look").expect("found");
     assert!(found.folder);
     assert_eq!(
-        replica.look(&porter_sync::RemoteId("nowhere".into())).await,
+        replica.look(&ferry_sync::RemoteId("nowhere".into())).await,
         Ok(None)
     );
     assert_eq!(replica.path_max(), Some(400));

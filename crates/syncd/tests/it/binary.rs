@@ -6,8 +6,8 @@ use crate::common;
 
 use common::bus::PrivateBus;
 use common::error_name;
-use porter_dbus::sync::SYNC_BUS;
-use porter_dbus::sync::SyncProxy;
+use ferry_bus::SYNC_BUS;
+use ferry_bus::SyncProxy;
 use std::path::{Path, PathBuf};
 use std::process::{Child, Command, Stdio};
 

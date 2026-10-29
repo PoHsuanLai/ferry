@@ -2,13 +2,13 @@ use super::rig::*;
 use crate::dataset::{Dataset, DatasetError, DatasetId, MemoryDataset};
 use crate::engine::{Engine, Outcome};
 use crate::journal::Journal;
-use porter_capability::{Delta, HashKind};
-use porter_ids::{Bytes, WebUrl};
-use porter_sync::{
+use ferry_sync::{
     Acknowledgement, BaseVersion, Blob, Change, ConflictRule, ItemKind, ItemPath, ItemState,
     LocalId, PutRefused, RemoteId, RemoteItem, RemoteSide, RemoteVersion, ReplicaError, Resolution,
     RetryAfter, Scanned,
 };
+use porter_capability::{Delta, HashKind};
+use porter_ids::{Bytes, WebUrl};
 use std::collections::BTreeMap;
 use std::sync::{Arc, Mutex, PoisonError};
 
@@ -354,7 +354,7 @@ async fn after_an_empty_listing(name: &str) -> (World, TestEngine, Vec<RemoteId>
 #[tokio::test]
 async fn an_empty_listing_after_a_full_one_discards_nothing_until_the_person_confirms() {
     let (world, engine, _) = after_an_empty_listing("mass").await;
-    let held = porter_sync::MassDelete {
+    let held = ferry_sync::MassDelete {
         discard: 3,
         held: 3,
     };

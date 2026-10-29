@@ -20,7 +20,7 @@
 //!   syncd never holds the Google token.
 //!
 //! Every endpoint, field and status is written from Google's documentation, without network
-//! access: unverified (FINDINGS).
+//! access: unverified (porter's FINDINGS.md).
 
 mod api;
 mod ledger;

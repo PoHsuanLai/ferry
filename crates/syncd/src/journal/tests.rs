@@ -1,10 +1,10 @@
 use super::*;
 use crate::testing::scratch;
-use porter_ids::{Bytes, UnixSeconds};
-use porter_sync::{
+use ferry_sync::{
     Acknowledgement, Anchor, BaseVersion, Conflict, ContentHash, ItemPath, ItemState, RemoteSide,
     RemoteVersion, Tombstone, TombstoneOrigin,
 };
+use porter_ids::{Bytes, UnixSeconds};
 
 fn item(local: &str, remote: Option<&str>, state: ItemState) -> JournalItem {
     JournalItem {

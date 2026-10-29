@@ -7,13 +7,13 @@ use super::super::PimKind;
 use super::super::discover::{DiscoverError, Found, discover};
 use super::super::relay::{pim_http, pim_replica};
 use super::{Feed, FeedChange, FeedCursor, Page, PimSource};
+use ferry_sync::Clock;
+use ferry_sync::{Anchor, ByteRange, Change, Cursor, RemoteId, Replica, ReplicaError};
 use porter_client::{Grants, GrantsLink};
 use porter_core::EndpointUrl;
 use porter_core::GrantId;
 use porter_http_relay::{RelayDial, RelayHttp};
 use porter_ids::WebUrl;
-use porter_sync::Clock;
-use porter_sync::{Anchor, ByteRange, Change, Cursor, RemoteId, Replica, ReplicaError};
 use std::sync::Arc;
 use storage_webdav::WebDavReplica;
 
@@ -121,7 +121,7 @@ impl<T: GrantsLink + 'static> Feed for DavFeed<T> {
         self.0.features()
     }
 
-    async fn quota(&self) -> Result<porter_sync::Quota, ReplicaError> {
+    async fn quota(&self) -> Result<ferry_sync::Quota, ReplicaError> {
         self.0.quota().await
     }
 }

@@ -13,6 +13,8 @@ use common::hosted::{Hosted, Link, NoDirectory, Service, host, keep};
 use common::{Known, client};
 use ds_settings::live::{AnyOwner, LiveClient};
 use ds_settings::schema::KeyPath;
+use ferry_bus::SyncProxy;
+use ferry_fake_graph::{FakeGraph, GraphHandle};
 use porter_callers::CallerRole;
 use porter_capability::{Claim, Offer, Provenance, Subject};
 use porter_core::AccountId;
@@ -20,9 +22,8 @@ use porter_core::{
     Account, AccountLabel, AccountState, AuthKind, Credential, EndpointUrl, Family, LoginName,
     Restriction, SecretKey, SecretPurpose, SecretText, ServiceEndpoint, Tls,
 };
-use porter_dbus::sync::SyncProxy;
 use porter_fake::FakeProvider;
-use porter_fake_servers::{FakeGraph, GraphHandle, Running};
+use porter_fake_servers::Running;
 use porter_families::set::ProviderNames;
 use porter_ids::UnixSeconds;
 use porter_provider::Provider;
@@ -174,7 +175,7 @@ async fn rig() -> Rig {
         settings: Settings::quick(),
         network,
         owners: Access::default(),
-        clock: porter_sync::Clock::new(porter_ids::clock::SystemClock),
+        clock: ferry_sync::Clock::new(porter_ids::clock::SystemClock),
         nonce: "t1".to_owned(),
         millis: Arc::new(syncd::datasets::photos::ManualMillis::at(1_700_000_000_000)),
     };

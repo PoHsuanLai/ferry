@@ -1,19 +1,19 @@
-//! [`GraphReplica`]: porter-sync's [`Replica`] over a folder of OneDrive's app folder, or of the
+//! [`GraphReplica`]: ferry-sync's [`Replica`] over a folder of OneDrive's app folder, or of the
 //! whole drive.
 
 use crate::addr::{Addr, Root};
 use crate::json::{DriveInfo, DriveItem};
+use ferry_sync::Clock;
+use ferry_sync::status::{read_error, unreached};
+use ferry_sync::{
+    BaseVersion, Blob, ByteRange, ChangePage, Cursor, Folders, PutItem, PutRefused, Quota,
+    RemoteId, RemoteVersion, Replica, ReplicaError, RetryAfter,
+};
 use porter_capability::{Access, Delta, HashKind, StorageCap, StorageScope};
 use porter_http::http::header::{ACCEPT, HeaderValue, RANGE};
 use porter_http::http::{Method, Request, Response};
 use porter_http::{HeaderText, Http, request};
 use porter_ids::{Bytes, WebUrl};
-use porter_sync::Clock;
-use porter_sync::status::{read_error, unreached};
-use porter_sync::{
-    BaseVersion, Blob, ByteRange, ChangePage, Cursor, Folders, PutItem, PutRefused, Quota,
-    RemoteId, RemoteVersion, Replica, ReplicaError, RetryAfter,
-};
 use std::sync::{Mutex, MutexGuard, PoisonError};
 
 /// How many delta items a page asks for unless told otherwise.

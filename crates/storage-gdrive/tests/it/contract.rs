@@ -1,4 +1,4 @@
-//! porter-sync's contract tests (`porter-sync/tests/contract.rs`), the same cases, run against the
+//! ferry-sync's contract tests (`ferry-sync/tests/contract.rs`), the same cases, run against the
 //! reference `MemoryReplica` (so the suite is the reference's) and against `GdriveReplica` over the
 //! fake Google's Drive, in two ways it can differ: small files by multipart upload and every file
 //! by resumable session; and once more in My Drive rather than the app data folder. A rule the
@@ -7,18 +7,18 @@
 use crate::common;
 
 use common::{Replica, Server};
-use porter_capability::{Access, Delta, HashKind, StorageCap, StorageScope};
-use porter_ids::{Bytes, UnixSeconds};
-use porter_sync::{
+use ferry_sync::{
     BaseVersion, Blob, ByteRange, Change, Conflict, Cursor, ItemPath, MemoryReplica, More, PutItem,
     PutRefused, PutTarget, Quota, RemoteId, RemoteSide, Replica as _, ReplicaError, Tombstone,
 };
+use porter_capability::{Access, Delta, HashKind, StorageCap, StorageScope};
+use porter_ids::{Bytes, UnixSeconds};
 use storage_gdrive::{Root, Uploads};
 
 /// A replica under test, its server, and the two knobs the contract needs from a server: an
 /// expired feed and a size limit.
 trait Harness: Sized {
-    type R: porter_sync::Replica;
+    type R: ferry_sync::Replica;
     async fn start(page: usize, limit: Option<u64>) -> Self;
     fn replica(&self) -> &Self::R;
     /// Every anchor handed out so far is now expired.
@@ -141,7 +141,7 @@ fn change_to(id: &RemoteId, bytes: &[u8]) -> PutItem {
     }
 }
 
-async fn head(replica: &impl porter_sync::Replica) -> Cursor {
+async fn head(replica: &impl ferry_sync::Replica) -> Cursor {
     let page = replica.changes(Cursor::Start).await.expect("listing");
     Cursor::At(page.next)
 }

@@ -8,8 +8,8 @@
 //! The files on disk are ordinary files with a line of text: nothing here is downloaded from
 //! anywhere, only the states are. Test tooling, never installed.
 
-use porter_dbus::sync::STORAGE_PATH;
-use porter_dbus::sync::{
+use ferry_bus::STORAGE_PATH;
+use ferry_bus::{
     DRIVE_KEY_ACCOUNT, DRIVE_KEY_LABEL, DRIVE_KEY_LOCAL, DRIVE_KEY_PATH, DRIVE_KEY_PROVIDER,
     DRIVE_KEY_STATE, DRIVE_KEY_TOTAL, DRIVE_KEY_USED, DRIVE_KEY_WORDS, DriveState,
     ITEM_KEY_FRACTION, ITEM_KEY_KEPT, ITEM_KEY_KIND, ITEM_KEY_OTHER, ITEM_KEY_STATE, ITEM_KEY_URL,

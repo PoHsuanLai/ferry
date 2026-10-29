@@ -6,15 +6,15 @@ use crate::common;
 
 use common::bus::PrivateBus;
 use common::{ACCESS_DENIED, INVALID_ARGS, Known, NO_FITTING, client, error_name, eventually};
-use porter_callers::CallerRole;
-use porter_capability::{Access, Delta, HashKind, StorageCap, StorageScope};
-use porter_dbus::sync::SyncProxy;
-use porter_dbus::sync::{STATUS_KEY_QUOTA, SYNC_BUS, SYNC_ERROR_PAUSED, SYNC_PATH};
-use porter_ids::{Bytes, UnixSeconds};
-use porter_sync::{
+use ferry_bus::SyncProxy;
+use ferry_bus::{STATUS_KEY_QUOTA, SYNC_BUS, SYNC_ERROR_PAUSED, SYNC_PATH};
+use ferry_sync::{
     BaseVersion, Conflict, ConflictRule, LocalId, MemoryReplica, Quota, RemoteId, RemoteSide,
     RemoteVersion, StoredConflict,
 };
+use porter_callers::CallerRole;
+use porter_capability::{Access, Delta, HashKind, StorageCap, StorageScope};
+use porter_ids::{Bytes, UnixSeconds};
 use std::collections::BTreeSet;
 use std::pin::Pin;
 use std::sync::Arc;

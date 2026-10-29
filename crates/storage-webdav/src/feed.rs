@@ -17,15 +17,15 @@ use crate::entry::{Entry, Kind, entries};
 use crate::replica::WebDavReplica;
 use crate::requests;
 use dav_proto::{Multistatus, SyncEnd, parse_multistatus, parse_sync_collection, token_expired};
-use porter_http::Http;
-use porter_http::http::Response;
-use porter_ids::Bytes;
-use porter_sync::DELETED;
-use porter_sync::status::{read_error, unreached};
-use porter_sync::{
+use ferry_sync::DELETED;
+use ferry_sync::status::{read_error, unreached};
+use ferry_sync::{
     Anchor, Change, ChangePage, Cursor, More, RemoteId, RemoteVersion, ReplicaError, RetryAfter,
     Tombstone,
 };
+use porter_http::Http;
+use porter_http::http::Response;
+use porter_ids::Bytes;
 use std::collections::{BTreeMap, BTreeSet};
 
 /// Which feed this server gave.

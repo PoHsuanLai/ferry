@@ -7,12 +7,12 @@
 use crate::common;
 
 use common::{Replica, Server};
-use porter_capability::StorageScope;
-use porter_ids::WebUrl;
-use porter_sync::{
+use ferry_sync::{
     Anchor, Change, Cursor, ExportError, Folders, ItemKind, More, RemoteId, Replica as _,
     ReplicaError,
 };
+use porter_capability::StorageScope;
+use porter_ids::WebUrl;
 use storage_gdrive::{Root, Uploads};
 
 const DOC: &str = "application/vnd.google-apps.document";

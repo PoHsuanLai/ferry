@@ -17,6 +17,7 @@ use crate::scheduler::{Network, Settings};
 use crate::service;
 use crate::service::{Access, Hub};
 use crate::settings::{SyncSettings, read_cache_limit, serve_settings};
+use ferry_drive_fuse::Mounter;
 use porter_callers::choose_proc_root;
 use porter_callers::{CallerFileError, ProcCallers};
 use porter_client::Porter;
@@ -25,7 +26,6 @@ use porter_client_inproc::{Hosted, PorterRelays};
 use porter_core::store::RegistryStore;
 use porter_daemon::xdg::PathError;
 use porter_dbus::BusTarget;
-use porter_drive_fuse::Mounter;
 use porter_families::DynProvider;
 use porter_families::set::{FamilyIo, ProviderNames, load_specs, served};
 use porter_ids::clock::SystemClock;
@@ -195,7 +195,7 @@ impl Config {
         // hand); its cache keeps what `syncd.toml` says.
         let mounter = Mounter {
             mountd: std::env::var_os("XDG_RUNTIME_DIR")
-                .map(|runtime| porter_drive_fuse::mountd::wire::socket_in(Path::new(&runtime))),
+                .map(|runtime| ferry_drive_fuse::mountd::wire::socket_in(Path::new(&runtime))),
             ..Mounter::new("fusermount3")
         };
         let storage = StorageConfig {
@@ -243,7 +243,7 @@ pub enum StartError {
     #[error("cannot serve org.quire.Photos1.Picker: {0}")]
     Picker(#[source] zbus::Error),
     /// The bus objects or the name could not be served.
-    #[error("cannot serve {bus}: {0}", bus = porter_dbus::sync::SYNC_BUS)]
+    #[error("cannot serve {bus}: {0}", bus = ferry_bus::SYNC_BUS)]
     Serve(#[source] zbus::Error),
 }
 
@@ -340,7 +340,7 @@ impl Daemon {
             settings: Settings::default(),
             network,
             owners: Access::default(),
-            clock: porter_sync::Clock::new(SystemClock),
+            clock: ferry_sync::Clock::new(SystemClock),
             nonce: nonce.clone(),
             millis: Arc::new(SystemMillis),
         };

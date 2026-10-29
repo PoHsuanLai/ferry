@@ -6,11 +6,11 @@
 use crate::common;
 
 use common::{Server, TOKEN};
-use porter_fake_servers::google::md5_hex;
-use porter_sync::{
+use ferry_sync::{
     Anchor, BaseVersion, Blob, ByteRange, Change, Cursor, ItemPath, More, PutItem, PutRefused,
     PutTarget, Replica as _, ReplicaError, RetryAfter,
 };
+use porter_fake_servers::google::md5_hex;
 use storage_gdrive::{CHUNK_UNIT, Uploads};
 
 fn new_item(path: &str, bytes: &[u8]) -> PutItem {
@@ -22,7 +22,7 @@ fn new_item(path: &str, bytes: &[u8]) -> PutItem {
 }
 
 /// Everything the first listing holds, following the pages.
-async fn listing(replica: &impl porter_sync::Replica) -> (Vec<Change>, Anchor) {
+async fn listing(replica: &impl ferry_sync::Replica) -> (Vec<Change>, Anchor) {
     let mut cursor = Cursor::Start;
     let mut all = Vec::new();
     loop {
@@ -259,7 +259,7 @@ async fn a_small_file_is_one_multipart_request_and_a_large_one_a_resumable_sessi
                 content: Blob(vec![1; 5_000]),
                 hash: None,
             },
-            BaseVersion::At(porter_sync::RemoteVersion("0".into())),
+            BaseVersion::At(ferry_sync::RemoteVersion("0".into())),
         )
         .await;
     assert!(
@@ -274,8 +274,8 @@ async fn a_small_file_is_one_multipart_request_and_a_large_one_a_resumable_sessi
     );
 }
 
-fn server_version(server: &Server, path: &str) -> porter_sync::RemoteVersion {
-    porter_sync::RemoteVersion(server.google.drive_version(path).expect("version"))
+fn server_version(server: &Server, path: &str) -> ferry_sync::RemoteVersion {
+    ferry_sync::RemoteVersion(server.google.drive_version(path).expect("version"))
 }
 
 #[tokio::test]

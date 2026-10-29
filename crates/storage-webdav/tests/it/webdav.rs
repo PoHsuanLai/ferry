@@ -5,7 +5,7 @@
 use crate::common;
 
 use common::{Flavor, Server};
-use porter_sync::{
+use ferry_sync::{
     BaseVersion, Blob, ByteRange, Change, Conflict, Cursor, ItemPath, PutItem, PutRefused,
     PutTarget, RemoteSide, Replica, ReplicaError,
 };

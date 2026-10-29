@@ -1,15 +1,15 @@
 //! The drive listing's SQLite file: every entry of the drive by id, the anchor the feed stands
-//! at, and the tree the replica learnt (`porter_sync::Folders`), each page written in one
+//! at, and the tree the replica learnt (`ferry_sync::Folders`), each page written in one
 //! transaction. An entry keeps its parent's id and its own name, never its path: a path is
 //! built when it is read, so a folder renamed or moved re-paths everything inside it without
 //! one more row written.
 
 use crate::journal::{JournalError, migrate};
-use porter_ids::{Bytes, UnixSeconds};
-use porter_sync::{
+use ferry_sync::{
     Anchor, Change, ChangePage, ContentHash, Cursor, Folders, ItemKind, ItemPath, More, RemoteId,
     RemoteItem, RemoteVersion,
 };
+use porter_ids::{Bytes, UnixSeconds};
 use rusqlite::{Connection, OptionalExtension, Transaction, params};
 use std::path::Path;
 use std::sync::{Mutex, MutexGuard, PoisonError};
@@ -286,11 +286,11 @@ impl DriveJournal {
     }
 }
 
-impl porter_drive::Listing for DriveJournal {
+impl ferry_drive::Listing for DriveJournal {
     fn entry(
         &self,
         id: &RemoteId,
-    ) -> Result<Option<porter_drive::Entry>, porter_drive::ListingError> {
+    ) -> Result<Option<ferry_drive::Entry>, ferry_drive::ListingError> {
         let connection = self.connection();
         listed_where(&connection, "id = ?1", params![id.0]).map(|mut rows| rows.pop())
     }
@@ -298,7 +298,7 @@ impl porter_drive::Listing for DriveJournal {
     fn children(
         &self,
         folder: Option<&RemoteId>,
-    ) -> Result<Vec<porter_drive::Entry>, porter_drive::ListingError> {
+    ) -> Result<Vec<ferry_drive::Entry>, ferry_drive::ListingError> {
         let connection = self.connection();
         match folder {
             None => listed_where(&connection, TOP, params![]),
@@ -309,7 +309,7 @@ impl porter_drive::Listing for DriveJournal {
     fn descendants(
         &self,
         folder: &RemoteId,
-    ) -> Result<Vec<porter_drive::Entry>, porter_drive::ListingError> {
+    ) -> Result<Vec<ferry_drive::Entry>, ferry_drive::ListingError> {
         let connection = self.connection();
         listed_where(
             &connection,
@@ -331,8 +331,8 @@ fn listed_where(
     connection: &Connection,
     filter: &str,
     values: impl rusqlite::Params,
-) -> Result<Vec<porter_drive::Entry>, porter_drive::ListingError> {
-    let fault = |e: JournalError| porter_drive::ListingError(e.to_string());
+) -> Result<Vec<ferry_drive::Entry>, ferry_drive::ListingError> {
+    let fault = |e: JournalError| ferry_drive::ListingError(e.to_string());
     let sql = format!(
         "SELECT id, CASE WHEN parent IN (SELECT id FROM entries) THEN parent END, name, kind, \
          size, hash, version, modified FROM entries WHERE {filter}"
@@ -347,7 +347,7 @@ fn listed_where(
     Ok(run()
         .map_err(fault)?
         .into_iter()
-        .map(|row| porter_drive::Entry {
+        .map(|row| ferry_drive::Entry {
             id: row.id,
             parent: row.parent,
             name: row.name,

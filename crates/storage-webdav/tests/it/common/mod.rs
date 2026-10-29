@@ -2,6 +2,7 @@
 //! the credential added the way accountd's relay would add it. No network beyond loopback.
 #![allow(dead_code)]
 
+use ferry_sync::Clock;
 use porter_fake_servers::dav::Behaviour;
 use porter_fake_servers::{DavHandle, FakeDav, Running};
 use porter_http::http::header::{AUTHORIZATION, HeaderValue};
@@ -9,7 +10,6 @@ use porter_http::http::{Request, Response};
 use porter_http::{Http, HttpError};
 use porter_http_relay::{Dial, RelayHttp, RelayLimits};
 use porter_ids::{UnixSeconds, WebUrl};
-use porter_sync::Clock;
 use std::future::Future;
 use storage_webdav::WebDavReplica;
 use tokio::net::TcpStream;

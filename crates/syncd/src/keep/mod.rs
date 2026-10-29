@@ -16,7 +16,7 @@
 //!   the grant back and keeps the listing, and the access stays given, so on again asks nothing.
 //! - [`Keep::keep_everything`]: "Keep Everything Downloaded" for a drive shown in Files, kept in
 //!   syncd's settings so it holds across restarts (the drive does the keeping:
-//!   `porter_drive::Drive::set_keep_all`).
+//!   `ferry_drive::Drive::set_keep_all`).
 //! - [`Keep::remove`]: forgets an account: stops its datasets, deletes its journals and mirrors
 //!   ([`crate::removal::wipe`]) and its secrets. accountd removing the identity does not do this:
 //!   the person removes it in the sync rows.

@@ -2,11 +2,11 @@
 //! token made into a media item. Pure over any [`Http`]; in syncd the `Http` is a relay that adds
 //! the bearer.
 
+use ferry_sync::Clock;
 use porter_http::http::request::Builder;
 use porter_http::http::{Method, Response, StatusCode};
 use porter_http::{HeaderText, Http, request};
 use porter_ids::{UnixSeconds, WebUrl};
-use porter_sync::Clock;
 use serde::Deserialize;
 
 /// What an upload returns, to be made into a media item.

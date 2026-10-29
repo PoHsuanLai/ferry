@@ -4,12 +4,12 @@
 use super::{Compared, Engine, Halt, Outcome, Report};
 use crate::dataset::{Dataset, replica_hash};
 use crate::journal::Op;
-use porter_ids::clock::Clock;
-use porter_sync::{
+use ferry_sync::{
     Acknowledgement, BaseVersion, Conflict, ItemState, JournalItem, LocalChange, PutItem,
     PutRefused, PutTarget, RemoteId, RemoteSide, RemoteVersion, Replica, TombstoneOrigin,
     local_changes,
 };
+use porter_ids::clock::Clock;
 
 impl<R: Replica, D: Dataset, K: Clock> Engine<R, D, K> {
     /// Records what the local side changed since the last cycle: the scan against the journal,
@@ -57,7 +57,7 @@ impl<R: Replica, D: Dataset, K: Clock> Engine<R, D, K> {
     /// The journal ops that record one change the scan found.
     fn record(&self, change: LocalChange) -> Result<Vec<Op>, Halt> {
         let rows = self.journal.items()?;
-        let held = |local: &porter_sync::LocalId| rows.iter().find(|row| row.local == *local);
+        let held = |local: &ferry_sync::LocalId| rows.iter().find(|row| row.local == *local);
         Ok(match change {
             LocalChange::New(seen) => vec![Op::PutItem(JournalItem {
                 local: seen.local,
@@ -140,7 +140,7 @@ impl<R: Replica, D: Dataset, K: Clock> Engine<R, D, K> {
             Err(PutRefused::Transient(after) | PutRefused::InUse(after)) => {
                 Err(Halt::Stop(Outcome::Retry(after)))
             }
-            // a refusal a later porter-sync adds: counted as refused
+            // a refusal a later ferry-sync adds: counted as refused
             Err(_) => {
                 report.refused += 1;
                 Ok(())
@@ -195,7 +195,7 @@ impl<R: Replica, D: Dataset, K: Clock> Engine<R, D, K> {
             Err(PutRefused::Transient(after) | PutRefused::InUse(after)) => {
                 Err(Halt::Stop(Outcome::Retry(after)))
             }
-            // a refusal a later porter-sync adds: counted as refused
+            // a refusal a later ferry-sync adds: counted as refused
             Err(_) => {
                 report.refused += 1;
                 Ok(())

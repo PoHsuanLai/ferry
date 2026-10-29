@@ -7,17 +7,17 @@ use crate::common;
 
 use common::bus::PrivateBus;
 use common::{Known, NO_FITTING, client, error_name};
+use ferry_bus::SYNC_ERROR_NOTHING_HELD;
+use ferry_bus::SyncProxy;
+use ferry_sync::{
+    BaseVersion, Blob, ByteRange, ChangePage, ConflictRule, Cursor, ItemPath, MemoryReplica,
+    PutItem, PutRefused, PutTarget, Quota, RemoteId, RemoteVersion, Replica, ReplicaError,
+};
 use porter_callers::CallerRole;
 use porter_capability::{Access, Delta, HashKind, StorageCap, StorageScope};
 use porter_core::AppName;
 use porter_dbus::Details;
-use porter_dbus::sync::SYNC_ERROR_NOTHING_HELD;
-use porter_dbus::sync::SyncProxy;
 use porter_ids::UnixSeconds;
-use porter_sync::{
-    BaseVersion, Blob, ByteRange, ChangePage, ConflictRule, Cursor, ItemPath, MemoryReplica,
-    PutItem, PutRefused, PutTarget, Quota, RemoteId, RemoteVersion, Replica, ReplicaError,
-};
 use std::collections::BTreeSet;
 use std::pin::Pin;
 use std::sync::Arc;

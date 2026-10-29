@@ -7,13 +7,13 @@ use crate::clock::ManualClock;
 use crate::datasets::pim::items_in;
 use crate::engine::Engine;
 use crate::testing::scratch;
-use porter_capability::{Access, Delta, HashKind, StorageCap, StorageScope};
-use porter_ids::UnixSeconds;
-use porter_sync::RemoteId;
-use porter_sync::{
+use ferry_sync::RemoteId;
+use ferry_sync::{
     BaseVersion, ByteRange, ChangePage, Cursor, MemoryReplica, PutItem, PutRefused, PutTarget,
     Quota, RemoteVersion, Replica, ReplicaError,
 };
+use porter_capability::{Access, Delta, HashKind, StorageCap, StorageScope};
+use porter_ids::UnixSeconds;
 use std::sync::atomic::{AtomicUsize, Ordering};
 
 /// A replica shared between engines (a restart), counting what is asked of it.
@@ -86,7 +86,7 @@ impl Server {
     async fn set(&self, path: &str, content: Blob) {
         let listed = self.0.inner.changes(Cursor::Start).await.expect("list");
         let held = listed.changes.iter().find_map(|change| match change {
-            porter_sync::Change::Upsert(item) if item.path.0 == path => Some(item.clone()),
+            ferry_sync::Change::Upsert(item) if item.path.0 == path => Some(item.clone()),
             _ => None,
         });
         let (target, base) = match held {

@@ -8,9 +8,9 @@ use super::resolve::{
 use crate::dataset::DatasetId;
 use crate::paths::AccountDir;
 use crate::scheduler::Pausing;
+use ferry_sync::{MassDelete, Quota, StoredConflict};
 use porter_callers::{Caller, CallerRole};
 use porter_core::AppName;
-use porter_sync::{MassDelete, Quota, StoredConflict};
 use std::collections::{BTreeMap, BTreeSet};
 use std::sync::{Arc, Mutex, MutexGuard, PoisonError};
 use tokio::sync::{Notify, broadcast, mpsc, oneshot, watch};

@@ -9,8 +9,8 @@
 
 use crate::dataset::{Dataset, DatasetError, DatasetId, fingerprint};
 use crate::datasets::photos::cas::{self, hash_file};
+use ferry_sync::{Blob, ConflictRule, ContentHash, ItemPath, LocalId, Scanned};
 use porter_ids::Bytes;
-use porter_sync::{Blob, ConflictRule, ContentHash, ItemPath, LocalId, Scanned};
 use std::io;
 use std::path::{Component, Path, PathBuf};
 

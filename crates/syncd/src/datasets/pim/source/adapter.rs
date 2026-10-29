@@ -6,7 +6,7 @@
 //! a mirror is pull-only and the engine never sends one.
 
 use super::{Feed, FeedChange, FeedCursor};
-use porter_sync::{
+use ferry_sync::{
     Anchor, BaseVersion, Blob, ByteRange, Change, ChangePage, Cursor, PutItem, PutRefused, Quota,
     RemoteId, RemoteVersion, Replica, ReplicaError,
 };

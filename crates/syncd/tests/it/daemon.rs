@@ -5,8 +5,8 @@
 
 use crate::common::bus::PrivateBus;
 
+use ferry_bus::SYNC_BUS;
 use porter_dbus::BusTarget;
-use porter_dbus::sync::SYNC_BUS;
 use std::path::Path;
 use std::time::Duration;
 use syncd::paths::Paths;

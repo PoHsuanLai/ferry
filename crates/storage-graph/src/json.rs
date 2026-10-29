@@ -1,6 +1,6 @@
 //! What Graph's JSON says, read as far as the replica needs.
 
-use porter_sync::ContentHash;
+use ferry_sync::ContentHash;
 use serde::Deserialize;
 use serde::de::IgnoredAny;
 

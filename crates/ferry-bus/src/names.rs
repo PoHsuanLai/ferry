@@ -8,7 +8,7 @@ pub const SYNC_PATH: &str = "/org/quire/Sync1";
 /// Where syncd serves `org.quire.Storage1` (the drives in Files), on its own bus name.
 pub const STORAGE_PATH: &str = "/org/quire/Storage1";
 /// The key of the quota in `Sync1.Status` (a vardict `a{sv}` holding `used` as a `t` and, when
-/// the provider reports a limit, `total` as a `t`). syncd builds it from porter-sync's `Quota`.
+/// the provider reports a limit, `total` as a `t`). syncd builds it from ferry-sync's `Quota`.
 pub const STATUS_KEY_QUOTA: &str = "quota";
 /// The key of the conflict's number in the `Sync1.Conflict` signal's details (an `x`): the
 /// number `Sync1.Resolve` takes as `conflict`.

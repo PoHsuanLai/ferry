@@ -4,7 +4,7 @@
 //! for a delta token the server has dropped, upload sessions, redirected downloads).
 
 use super::drive::{Aim, Body, CHUNK_UNIT, Drive, Node, Refused, Upload};
-use crate::http::{Request, Response};
+use porter_fake_servers::http::{Request, Response};
 use serde_json::{Value, json};
 
 /// What a test can change about how the server answers.

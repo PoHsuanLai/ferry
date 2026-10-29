@@ -11,7 +11,7 @@
 //!   the source's own ([`FeedCursor`]: a sync token, a delta link, a page token); the journal
 //!   stores it as the opaque anchor text.
 //!
-//! [`FeedReplica`] makes any feed a porter-sync `Replica` for the engine, which is why nothing
+//! [`FeedReplica`] makes any feed a ferry-sync `Replica` for the engine, which is why nothing
 //! else in syncd changed. The source is chosen by the capability's transport
 //! ([`choose`]: `caldav` and `carddav` are [`dav`], `graph` is [`graph`], `google_api` is
 //! [`google`], one source per kind), never by provider.
@@ -32,9 +32,9 @@ pub use graph::{GraphCalendarFeed, GraphCalendarSource};
 
 use super::PimKind;
 use super::discover::{DiscoverError, Found};
+use ferry_sync::{More, RemoteItem, ReplicaError, Tombstone};
 use porter_capability::{Capability, PimTransport};
 use porter_core::{Candidate, ServiceEndpoint};
-use porter_sync::{More, RemoteItem, ReplicaError, Tombstone};
 use std::future::Future;
 
 /// A position in a collection's change feed, in the source's own type.
@@ -88,7 +88,7 @@ pub trait Feed: Send + Sync + 'static {
     /// An item's bytes, for an upsert that came without them.
     fn fetch(
         &self,
-        id: &porter_sync::RemoteId,
+        id: &ferry_sync::RemoteId,
     ) -> impl Future<Output = Result<Vec<u8>, ReplicaError>> + Send;
 
     /// What the backend offers; the default is a read-only feed whose items the engine compares
@@ -107,9 +107,9 @@ pub trait Feed: Send + Sync + 'static {
     }
 
     /// The quota, when `features` says it is reported.
-    fn quota(&self) -> impl Future<Output = Result<porter_sync::Quota, ReplicaError>> + Send {
+    fn quota(&self) -> impl Future<Output = Result<ferry_sync::Quota, ReplicaError>> + Send {
         async {
-            Ok(porter_sync::Quota {
+            Ok(ferry_sync::Quota {
                 used: porter_ids::Bytes(0),
                 total: None,
             })

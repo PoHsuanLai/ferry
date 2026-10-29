@@ -7,16 +7,16 @@ use crate::common;
 
 use common::bus::PrivateBus;
 use common::{ACCESS_DENIED, Known, client, error_name, eventually};
-use porter_callers::CallerRole;
-use porter_core::AppName;
-use porter_dbus::sync::{
+use ferry_bus::{
     DRIVE_KEY_LOCAL, DRIVE_KEY_PATH, DRIVE_KEY_PROVIDER, DRIVE_KEY_STATE, DRIVE_KEY_WORDS,
     ITEM_KEY_FRACTION, ITEM_KEY_KEPT, ITEM_KEY_KIND, ITEM_KEY_OTHER, ITEM_KEY_STATE, ITEM_KEY_URL,
     StorageProxy,
 };
-use porter_dbus::sync::{STORAGE_PATH, SYNC_BUS};
-use porter_drive::testing::{MemoryListing, MemorySink, MemorySource, Took};
-use porter_drive::{Drive, DriveConfig, NodeId, Reason};
+use ferry_bus::{STORAGE_PATH, SYNC_BUS};
+use ferry_drive::testing::{MemoryListing, MemorySink, MemorySource, Took};
+use ferry_drive::{Drive, DriveConfig, NodeId, Reason};
+use porter_callers::CallerRole;
+use porter_core::AppName;
 use std::collections::BTreeSet;
 use std::pin::Pin;
 use std::sync::Arc;
@@ -87,7 +87,7 @@ async fn rig_over(writable: bool) -> Rig {
         ROOT.into(),
         files,
     ));
-    drive.set_listed(porter_dbus::sync::DriveState::Ready, None);
+    drive.set_listed(ferry_bus::DriveState::Ready, None);
     let drives = DriveSet::default();
     drives.insert(Arc::clone(&drive));
     let server = bus.connect().await;
@@ -277,7 +277,7 @@ async fn download_keep_and_remove_act_and_refuse_with_the_words_files_shows() {
             .ok()
             .flatten()
             .and_then(|n| rig.drive.drive.status(&n.id))
-            .is_some_and(|s| s.state == porter_drive::ItemState::Downloaded)
+            .is_some_and(|s| s.state == ferry_drive::ItemState::Downloaded)
     })
     .await;
     assert_eq!(
@@ -539,7 +539,7 @@ async fn a_change_made_here_waits_while_paused_then_uploads_and_is_downloaded_on
     eventually("uploading", || {
         files
             .status(&id)
-            .is_some_and(|s| s.state == porter_drive::ItemState::Uploading)
+            .is_some_and(|s| s.state == ferry_drive::ItemState::Uploading)
     })
     .await;
     let items = proxy
@@ -564,7 +564,7 @@ async fn a_change_made_here_waits_while_paused_then_uploads_and_is_downloaded_on
         matches!(files.canonical(&id), NodeId::Remote(_))
             && files
                 .status(&id)
-                .is_some_and(|s| s.state == porter_drive::ItemState::Downloaded)
+                .is_some_and(|s| s.state == ferry_drive::ItemState::Downloaded)
     })
     .await;
     assert_eq!(
@@ -580,7 +580,7 @@ async fn a_file_changed_here_and_on_the_drive_shows_both_in_conflict_each_naming
     let proxy = storage(&me).await;
     rig.drive.set_paused(true);
     let files = &rig.drive.drive;
-    let report = NodeId::Remote(porter_sync::RemoteId("r".into()));
+    let report = NodeId::Remote(ferry_sync::RemoteId("r".into()));
     let handle = files.open_write(&report, true).await.expect("open");
     files.write(handle, 0, b"mine").await.expect("write");
     files.release_write(handle);

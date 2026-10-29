@@ -6,13 +6,13 @@ use crate::dataset::MemoryDataset;
 use crate::engine::{Engine, Report};
 use crate::journal::Journal;
 use crate::testing::scratch;
-use porter_capability::{Access, Delta, HashKind, StorageCap, StorageScope};
-use porter_ids::{Bytes, UnixSeconds};
-use porter_sync::{
+use ferry_sync::{
     BaseVersion, Blob, ByteRange, Change, ChangePage, ConflictRule, Cursor, ItemPath,
     MemoryReplica, PutItem, PutRefused, PutTarget, Quota, RemoteId, RemoteVersion, Replica,
     ReplicaError,
 };
+use porter_capability::{Access, Delta, HashKind, StorageCap, StorageScope};
+use porter_ids::{Bytes, UnixSeconds};
 use std::collections::BTreeMap;
 use std::sync::atomic::{AtomicUsize, Ordering};
 use std::sync::{Arc, Mutex, PoisonError};

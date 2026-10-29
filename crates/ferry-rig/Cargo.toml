@@ -1,0 +1,44 @@
+[package]
+name = "ferry-rig"
+description = "Test tooling, never installed and never in dist: the rig a jailed scenario drives ferry with. ferry-rig-servers starts the Microsoft Graph fake (the drive and the calendars) behind porter's fake OAuth issuer on loopback, plants known tokens and serves the scenario's levers; ferry-rig-client acts as an app over the session bus and talks to syncd's org.quire.Sync1. Nothing shipped depends on it."
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+rust-version.workspace = true
+repository.workspace = true
+publish.workspace = true
+
+[[bin]]
+name = "ferry-rig-servers"
+path = "src/bin/ferry-rig-servers.rs"
+
+[[bin]]
+name = "ferry-rig-client"
+path = "src/bin/ferry-rig-client.rs"
+
+[dependencies]
+ferry-bus = { workspace = true }
+ferry-fake-graph = { workspace = true }
+porter-dbus = { workspace = true }
+porter-fake-servers = { workspace = true }
+# The rig's shared pieces: the identity fixture the daemons read, the planted secrets and the
+# shapes of rig.json.
+porter-rig = { workspace = true }
+clap = { workspace = true }
+serde = { workspace = true }
+serde_json = { workspace = true }
+# `signal` is what this crate adds to the pinned line: SIGTERM ends the servers cleanly.
+tokio = { workspace = true, features = ["signal"] }
+zbus = { workspace = true }
+
+[dev-dependencies]
+ferry-sync = { workspace = true }
+syncd = { workspace = true, features = ["testing"] }
+porter-callers = { workspace = true, features = ["test-proc-root"] }
+porter-core = { workspace = true }
+porter-ids = { workspace = true }
+rustix = { workspace = true }
+test-kit = { workspace = true }
+
+[lints]
+workspace = true

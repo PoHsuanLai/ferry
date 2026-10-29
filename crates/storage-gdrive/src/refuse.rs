@@ -5,10 +5,10 @@
 //! (`dailyLimitExceeded`, `quotaExceeded`) is waited out for [`DAY_LIMIT`].
 
 use crate::json::ErrorBody;
+use ferry_sync::status::{self, retry_after};
+use ferry_sync::{ExportError, PutRefused, ReplicaError, RetryAfter};
 use porter_http::http::Response;
 use porter_ids::UnixSeconds;
-use porter_sync::status::{self, retry_after};
-use porter_sync::{ExportError, PutRefused, ReplicaError, RetryAfter};
 
 /// How long to wait when a day's limit is used up: an hour, then again.
 pub const DAY_LIMIT: RetryAfter = RetryAfter(3600);
@@ -73,8 +73,8 @@ pub fn write_error(response: &Response<Vec<u8>>, now: UnixSeconds) -> PutRefused
 #[cfg(test)]
 mod tests {
     use super::*;
+    use ferry_sync::status::RETRY;
     use porter_http::http::Response;
-    use porter_sync::status::RETRY;
 
     fn answer(status: u16, retry: Option<&str>, reason: Option<&str>) -> Response<Vec<u8>> {
         let body = reason

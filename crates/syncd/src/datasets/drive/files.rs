@@ -1,4 +1,4 @@
-//! The drives shown in Files: each one's files on demand (`porter_drive::Drive` over its
+//! The drives shown in Files: each one's files on demand (`ferry_drive::Drive` over its
 //! journal), its folder in `~/Cloud`, and where it stands, shared between the storage supervisor
 //! that runs them and `org.quire.Storage1` that serves them.
 //!
@@ -13,9 +13,9 @@
 //! opened for this; a cache that cannot be read stops the removal.
 
 use crate::paths::{AccountDir, Paths};
-use porter_dbus::sync::DriveState;
-use porter_drive::{Changed, Drive, DriveConfig, NodeId};
-use porter_drive_fuse::Mounted;
+use ferry_bus::DriveState;
+use ferry_drive::{Changed, Drive, DriveConfig, NodeId};
+use ferry_drive_fuse::Mounted;
 use std::collections::BTreeMap;
 use std::path::{Path, PathBuf};
 use std::sync::{Arc, Mutex, PoisonError};
@@ -24,7 +24,7 @@ use tokio::task::JoinHandle;
 
 /// The cache limit every drive's eviction uses (Settings' `storage.cache_limit`), shared by the
 /// settings module that sets it and the drives that follow it.
-pub type CacheKnob = Arc<watch::Sender<porter_drive::CacheLimit>>;
+pub type CacheKnob = Arc<watch::Sender<ferry_drive::CacheLimit>>;
 
 /// What a drive needing sign-in says.
 pub const SIGN_IN_WORDS: &str = "Sign in again to see this drive's files.";
@@ -77,14 +77,14 @@ fn not_uploaded(folder: &Path) -> PathBuf {
 /// The bytes of a drive not shown: none can be had (only what is here is read).
 struct Away;
 
-impl porter_drive::Source for Away {
+impl ferry_drive::Source for Away {
     fn fetch<'a>(
         &'a self,
-        _id: &'a porter_drive::RemoteId,
+        _id: &'a ferry_drive::RemoteId,
         _start: u64,
         _len: u64,
-    ) -> porter_drive::Fetching<'a> {
-        Box::pin(std::future::ready(Err(porter_drive::SourceError::Offline)))
+    ) -> ferry_drive::Fetching<'a> {
+        Box::pin(std::future::ready(Err(ferry_drive::SourceError::Offline)))
     }
 }
 
@@ -221,7 +221,7 @@ impl LiveDrive {
     }
 
     /// Notes that its folder could not be shown on this computer, and the words Files shows
-    /// (porter-drive's `NO_FILES_HERE`, or porter-mountd's when it refused).
+    /// (ferry-drive's `NO_FILES_HERE`, or porter-mountd's when it refused).
     pub fn set_unshown(&self, words: &str) {
         held(&self.standing).unshown = Some(words.to_owned());
     }
@@ -492,7 +492,7 @@ impl DriveSet {
     }
 
     /// Hears the ids of the drives whose room to keep everything downloaded changes from now on:
-    /// short of it, or no longer ([`porter_drive::Drive::short_of_room`]).
+    /// short of it, or no longer ([`ferry_drive::Drive::short_of_room`]).
     pub fn watch_room(&self) -> broadcast::Receiver<String> {
         self.room.subscribe()
     }
@@ -511,8 +511,8 @@ impl DriveSet {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use porter_drive::testing::{MemoryListing, MemorySource};
-    use porter_drive::{DriveConfig, RemoteId};
+    use ferry_drive::testing::{MemoryListing, MemorySource};
+    use ferry_drive::{DriveConfig, RemoteId};
 
     #[tokio::test]
     async fn changes_missed_tell_of_every_tracked_item_again() {
@@ -600,7 +600,7 @@ mod tests {
         let settings = dir.join("syncd.toml");
         let listing = Arc::new(MemoryListing::default());
         let source = Arc::new(MemorySource::default());
-        let sink = Arc::new(porter_drive::testing::MemorySink::new(
+        let sink = Arc::new(ferry_drive::testing::MemorySink::new(
             listing.clone(),
             source.clone(),
             4,
@@ -703,7 +703,7 @@ mod tests {
         let dir = test_kit::Scratch::new("drive-files-stuck");
         let listing = Arc::new(MemoryListing::default());
         let source = Arc::new(MemorySource::default());
-        let sink = Arc::new(porter_drive::testing::MemorySink::new(
+        let sink = Arc::new(ferry_drive::testing::MemorySink::new(
             listing.clone(),
             source.clone(),
             4,
@@ -764,7 +764,7 @@ mod tests {
                 .expect("journal"),
         );
         let source = Arc::new(MemorySource::default());
-        let sink = Arc::new(porter_drive::testing::MemorySink::new(
+        let sink = Arc::new(ferry_drive::testing::MemorySink::new(
             Arc::new(MemoryListing::default()),
             source.clone(),
             4,

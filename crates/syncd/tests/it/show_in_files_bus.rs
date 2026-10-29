@@ -16,6 +16,10 @@ use common::hosted::{Hosted, Link, NoDirectory, Service, host_with};
 use common::{Known, client};
 use ds_settings::live::{AnyOwner, LiveClient};
 use ds_settings::schema::KeyPath;
+use ferry_drive::{CacheLimit, FreeSpace, ItemState, Reason};
+use ferry_drive_fuse::{Mounter, mountd};
+use ferry_fake_graph::{FakeGraph, GraphHandle};
+use ferry_sync::ItemPath;
 use porter_callers::CallerRole;
 use porter_capability::KindToggle;
 use porter_capability::{CapabilityKind, StorageScope};
@@ -25,17 +29,14 @@ use porter_core::{
     Account, AccountLabel, AccountState, AuthKind, Credential, EndpointUrl, Family, LoginName,
     Restriction, SecretKey, SecretPurpose, SecretText, ServiceEndpoint, Tls,
 };
-use porter_drive::{CacheLimit, FreeSpace, ItemState, Reason};
-use porter_drive_fuse::{Mounter, mountd};
 use porter_fake::{FakeProvider, ScriptedSheets};
-use porter_fake_servers::{FakeGraph, GraphHandle, Running};
+use porter_fake_servers::Running;
 use porter_families::set::ProviderNames;
 use porter_ids::UnixSeconds;
 use porter_provider::Provider;
 use porter_secrets::{MemorySecrets, Secrets};
 use porter_service_core::registry::Registry;
 use porter_sheet::SheetInput;
-use porter_sync::ItemPath;
 use std::sync::Arc;
 use std::time::Duration;
 use syncd::datasets::drive::LiveDrive;
@@ -194,7 +195,7 @@ async fn build(
         settings: Settings::quick(),
         network,
         owners: Access::default(),
-        clock: porter_sync::Clock::new(porter_ids::clock::SystemClock),
+        clock: ferry_sync::Clock::new(porter_ids::clock::SystemClock),
         nonce: "t1".to_owned(),
         millis: Arc::new(syncd::datasets::photos::ManualMillis::at(1_700_000_000_000)),
     };
@@ -693,7 +694,7 @@ async fn a_computer_that_cannot_show_the_folder_says_so_and_the_drive_still_list
     let drive = shown(&mut rig).await;
     // The folder is mounted off the runtime's thread: its answer comes a moment later.
     eventually("the drive says it is not shown", async || {
-        drive.state().0 == porter_dbus::sync::DriveState::Error
+        drive.state().0 == ferry_bus::DriveState::Error
     })
     .await;
     let (_, said) = drive.state();
@@ -732,7 +733,7 @@ async fn porter_mountd_is_asked_when_it_listens_and_its_words_are_shown() {
     let drive = shown(&mut rig).await;
     // The folder is mounted off the runtime's thread: its answer comes a moment later.
     eventually("the drive says it is not shown", async || {
-        drive.state().0 == porter_dbus::sync::DriveState::Error
+        drive.state().0 == ferry_bus::DriveState::Error
     })
     .await;
     let (_, said) = drive.state();

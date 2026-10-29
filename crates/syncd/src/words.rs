@@ -1,11 +1,11 @@
 //! The words Files shows for a drive's items and folders, written from the typed reasons
-//! porter-drive, porter-drive-fuse and porter-mountd return. syncd serves `org.quire.Storage1`
+//! ferry-drive, ferry-drive-fuse and porter-mountd return. syncd serves `org.quire.Storage1`
 //! and the sync settings rows, so the sentences live here and nowhere in those
 //! libraries.
 
-use porter_drive::Reason;
-use porter_drive_fuse::MountError;
-use porter_drive_fuse::mountd::wire::Code;
+use ferry_drive::Reason;
+use ferry_drive_fuse::MountError;
+use ferry_drive_fuse::mountd::wire::Code;
 
 /// A drive this computer cannot show as a folder (no way to show files on demand here).
 pub const NO_FILES_HERE: &str = "Files can't show this drive on this computer.";
@@ -32,7 +32,7 @@ pub fn reason(reason: Reason) -> &'static str {
         Reason::NoFileFormat => "This document can't be saved as a file.",
         Reason::TooLarge => "This document is too large to save as a copy.",
         Reason::CopyFailed => "The copy couldn't be made. Try again later.",
-        // a reason a newer porter-drive adds
+        // a reason a newer ferry-drive adds
         _ => "The drive couldn't take this change.",
     }
 }

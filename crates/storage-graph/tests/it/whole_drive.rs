@@ -5,10 +5,10 @@
 use crate::common;
 
 use common::{Replica, Server};
-use porter_capability::StorageScope;
-use porter_sync::{
+use ferry_sync::{
     Anchor, Change, Cursor, Folders, ItemKind, More, RemoteId, Replica as _, ReplicaError,
 };
+use porter_capability::StorageScope;
 use storage_graph::{Root, Uploads};
 
 /// Every page from `from` until the feed is caught up: the changes, the last anchor, and how

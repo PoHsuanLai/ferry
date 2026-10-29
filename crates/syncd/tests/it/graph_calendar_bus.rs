@@ -11,6 +11,7 @@ use crate::common;
 use common::bus::PrivateBus;
 use common::caller as caller_of;
 use common::hosted::host;
+use ferry_fake_graph::{FakeGraph, GraphHandle};
 use porter_callers::CallerRole;
 use porter_capability::StorageScope;
 use porter_capability::{CapabilityKind, Claim, Offer, Provenance, Subject};
@@ -24,7 +25,7 @@ use porter_core::{
     consent::{Decision, Grant, GrantScope, Usage},
 };
 use porter_fake::FakeProvider;
-use porter_fake_servers::{FakeGraph, GraphHandle, Running};
+use porter_fake_servers::Running;
 use porter_ids::UnixSeconds;
 use porter_provider::Provider;
 use porter_secrets::{MemorySecrets, Secrets};
@@ -225,7 +226,7 @@ async fn rig(seed: bool) -> Rig {
         settings: Settings::quick(),
         network,
         owners: Access::default(),
-        clock: porter_sync::Clock::new(porter_ids::clock::SystemClock),
+        clock: ferry_sync::Clock::new(porter_ids::clock::SystemClock),
         nonce: "t1".to_owned(),
         millis: Arc::new(syncd::datasets::photos::ManualMillis::at(1_700_000_000_000)),
     };

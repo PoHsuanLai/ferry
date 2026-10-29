@@ -196,22 +196,13 @@ fn the_test_proc_root_feature_is_not_a_default_feature() {
 }
 
 #[test]
-fn syncd_is_one_app_id_in_the_caller_table_and_in_every_test_and_doc() {
-    let table = dist("callers.toml");
-    assert!(
-        table.contains(
-            "app = \"org.quire.Sync\"\nunit = \"syncd.service\"\nrole = \"porter_daemon\""
-        ),
-        "the shipped caller table names syncd `org.quire.Sync`"
-    );
-    // The name this crate once also went by; no source, test or doc may use it again.
+fn syncd_is_one_app_id_in_every_test_and_doc() {
+    // The name this crate once also went by; no source, test or doc may use it again. (The caller
+    // table that names syncd `org.quire.Sync` is porter's: accountd and syncd read it from
+    // /etc/porter/callers.toml.)
     let stray = ["org.quire.", "Syncd"].concat();
     let root = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
-    let mut pending = vec![
-        root.join("src"),
-        root.join("tests"),
-        root.join("../../FINDINGS.md"),
-    ];
+    let mut pending = vec![root.join("src"), root.join("tests"), root.join("../../docs")];
     while let Some(path) = pending.pop() {
         if path.is_dir() {
             pending.extend(

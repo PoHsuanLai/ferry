@@ -6,7 +6,7 @@
 use crate::common;
 
 use common::{Replica, Server};
-use porter_sync::{
+use ferry_sync::{
     BaseVersion, Content, DriveWrite, Place, Progress, PutRefused, RemoteSide, Session, Unheard,
     Upload, UploadTo, Written,
 };

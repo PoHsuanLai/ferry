@@ -6,14 +6,14 @@
 use super::rig::*;
 use crate::engine::SyncError;
 use crate::journal::JournalError;
+use ferry_sync::ItemState;
 use porter_capability::StorageCap;
-use porter_sync::ItemState;
 use std::collections::BTreeMap;
 
 type Files = BTreeMap<String, Vec<u8>>;
 
 /// The scenario's setup, run to rest: four files on the replica, all synced.
-async fn setup(world: &World) -> (TestEngine, Vec<porter_sync::RemoteId>) {
+async fn setup(world: &World) -> (TestEngine, Vec<ferry_sync::RemoteId>) {
     let ids = vec![
         world.remote_put("keep.txt", b"keep").await,
         world.remote_put("edit.txt", b"old").await,
@@ -27,7 +27,7 @@ async fn setup(world: &World) -> (TestEngine, Vec<porter_sync::RemoteId>) {
 }
 
 /// What happens between two cycles: both sides change, in every way the engine handles.
-async fn mutate(world: &World, ids: &[porter_sync::RemoteId]) {
+async fn mutate(world: &World, ids: &[ferry_sync::RemoteId]) {
     world.remote_edit(&ids[1], b"new").await;
     world.remote_remove(&ids[2]).await;
     world.remote_put("new_remote.txt", b"from afar").await;

@@ -1,5 +1,5 @@
 //! A dataset is the local side of a sync: what is held here, how to read it, how to store what
-//! the replica has. The engine runs one over a [`porter_sync::Replica`]; the real ones (the PIM
+//! the replica has. The engine runs one over a [`ferry_sync::Replica`]; the real ones (the PIM
 //! mirror W6e, Photos W6f) implement this trait, and tests implement it over memory.
 
 #[cfg(any(test, feature = "testing"))]
@@ -8,8 +8,8 @@ mod memory;
 #[cfg(any(test, feature = "testing"))]
 pub use memory::MemoryDataset;
 
+use ferry_sync::{Blob, ConflictRule, ContentHash, ItemPath, LocalId, Scanned};
 use porter_capability::HashKind;
-use porter_sync::{Blob, ConflictRule, ContentHash, ItemPath, LocalId, Scanned};
 use sha2::{Digest, Sha256};
 use std::future::Future;
 

@@ -1,10 +1,11 @@
 //! A Graph drive that accepts the access tokens the fake issuer minted, and no other.
 
+use ferry_fake_graph::FakeGraph;
 use porter_fake::FakeAddress;
 use porter_fake_servers::browser::split_loopback;
 use porter_fake_servers::http::{Request, Scheme, post_form, send};
 use porter_fake_servers::oauth::TokenResult;
-use porter_fake_servers::{FakeGraph, FakeIssuer, IssuerEvent};
+use porter_fake_servers::{FakeIssuer, IssuerEvent};
 
 async fn status(address: &FakeAddress, bearer: Option<&str>) -> u16 {
     let mut request = Request::new("GET", "/v1.0/me/drive");
@@ -89,7 +90,7 @@ async fn me_says_who_the_token_is_for_and_only_to_a_token_the_drive_accepts() {
     assert_eq!(answer.status, 200);
     let who: serde_json::Value = serde_json::from_slice(&answer.body).expect("json");
     // The two fields the Microsoft sign-in reads: `mail` first, then `userPrincipalName`.
-    assert_eq!(who["mail"], porter_fake_servers::graph::DEFAULT_MAIL);
+    assert_eq!(who["mail"], ferry_fake_graph::DEFAULT_MAIL);
     assert_eq!(who["userPrincipalName"], who["mail"]);
 
     graph.set_mail("grace@work.example");

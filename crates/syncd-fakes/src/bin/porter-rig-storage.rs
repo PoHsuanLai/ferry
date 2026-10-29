@@ -53,8 +53,8 @@ async fn main() -> ExitCode {
         }
     };
     for (id, details) in world.drives() {
-        let path = syncd_fakes::storage::word_of(&details, porter_dbus::sync::DRIVE_KEY_PATH)
-            .unwrap_or_default();
+        let path =
+            syncd_fakes::storage::word_of(&details, ferry_bus::DRIVE_KEY_PATH).unwrap_or_default();
         eprintln!("porter-rig-storage: drive {id} at {path}");
     }
     let storage = FakeStorage::new(world);
@@ -65,7 +65,7 @@ async fn main() -> ExitCode {
     if let Err(why) = serve(&connection, &name, storage.clone()).await {
         return fail(format!("cannot serve org.quire.Storage1 as {name}: {why}"));
     }
-    let emitter = match SignalEmitter::new(&connection, porter_dbus::sync::STORAGE_PATH) {
+    let emitter = match SignalEmitter::new(&connection, ferry_bus::STORAGE_PATH) {
         Ok(emitter) => emitter,
         Err(why) => return fail(format!("cannot send signals: {why}")),
     };

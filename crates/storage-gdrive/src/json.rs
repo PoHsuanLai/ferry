@@ -1,7 +1,7 @@
 //! What Drive's JSON says, read as far as the replica needs.
 
+use ferry_sync::{ContentHash, ItemKind};
 use porter_ids::WebUrl;
-use porter_sync::{ContentHash, ItemKind};
 use serde::Deserialize;
 
 /// The mime type of a folder.

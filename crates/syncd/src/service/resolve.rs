@@ -2,8 +2,8 @@
 //! that goes from the hub to the dataset's driver (which owns the engine and settles it between
 //! cycles, so nothing races a cycle writing the journal).
 
-use porter_dbus::sync::{RESOLVE_KEEP_LOCAL, RESOLVE_KEEP_REMOTE};
-use porter_sync::Resolution;
+use ferry_bus::{RESOLVE_KEEP_LOCAL, RESOLVE_KEEP_REMOTE};
+use ferry_sync::Resolution;
 use std::str::FromStr;
 use tokio::sync::oneshot;
 

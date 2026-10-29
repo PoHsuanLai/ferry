@@ -1,13 +1,13 @@
 //! Recorded multistatus fixtures (the shapes Nextcloud and Sabre-based servers answer) through
 //! the replica, with a scripted HTTP seam in place of a server: no network, no socket.
 
+use ferry_sync::Clock;
+use ferry_sync::{
+    Change, Cursor, Quota, RemoteId, RemoteVersion, Replica, ReplicaError, RetryAfter,
+};
 use porter_http::http::{Request, Response};
 use porter_http::{Http, HttpError};
 use porter_ids::{Bytes, UnixSeconds, WebUrl};
-use porter_sync::Clock;
-use porter_sync::{
-    Change, Cursor, Quota, RemoteId, RemoteVersion, Replica, ReplicaError, RetryAfter,
-};
 use std::collections::BTreeMap;
 use std::future::Future;
 use std::sync::{Arc, Mutex};
@@ -139,7 +139,7 @@ async fn a_sabre_sync_report_gives_changes_removals_and_the_next_token() {
     );
     let replica = replica(script.clone());
     let page = replica
-        .changes(Cursor::At(porter_sync::Anchor(
+        .changes(Cursor::At(ferry_sync::Anchor(
             "sync:http://sabre.test/sync/41".into(),
         )))
         .await;
@@ -188,19 +188,19 @@ async fn a_truncated_report_continues_from_its_token_instead_of_expiring() {
         .collect();
     assert_eq!(ids, [format!("{FOLDER}a.jpg")]);
     // Not the end: the rest is asked for at once, from the token the server gave.
-    assert_eq!(first.more, porter_sync::More::More);
+    assert_eq!(first.more, ferry_sync::More::More);
     assert_eq!(
         first.next,
-        porter_sync::Anchor("sync:http://sabre.test/sync/7".into())
+        ferry_sync::Anchor("sync:http://sabre.test/sync/7".into())
     );
     let rest = replica
         .changes(Cursor::At(first.next))
         .await
         .expect("the rest");
-    assert_eq!(rest.more, porter_sync::More::Done);
+    assert_eq!(rest.more, ferry_sync::More::Done);
     assert_eq!(
         rest.next,
-        porter_sync::Anchor("sync:http://sabre.test/sync/42".into())
+        ferry_sync::Anchor("sync:http://sabre.test/sync/42".into())
     );
     let sent = script.sent();
     assert_eq!(sent.len(), 2);
@@ -215,7 +215,7 @@ async fn a_valid_sync_token_precondition_is_an_expired_anchor() {
         answer(403, fixture("sabre-sync-expired.xml")),
     );
     let got = replica(script)
-        .changes(Cursor::At(porter_sync::Anchor("sync:old".into())))
+        .changes(Cursor::At(ferry_sync::Anchor("sync:old".into())))
         .await;
     assert_eq!(got, Err(ReplicaError::AnchorExpired));
 }
@@ -251,18 +251,18 @@ async fn fetch_and_write_statuses_map_to_the_contract() {
     let id = RemoteId(format!("{FOLDER}a.jpg"));
     let key = |m: &str| format!("{m} {FOLDER}a.jpg");
     let ignoring_range = Script::default().on(&key("GET"), answer(200, b"0123456789".to_vec()));
-    let span = porter_sync::ByteRange::Span {
+    let span = ferry_sync::ByteRange::Span {
         start: Bytes(2),
         len: Bytes(3),
     };
     assert_eq!(
         replica(ignoring_range).fetch(&id, span).await,
-        Ok(porter_sync::Blob(b"234".to_vec()))
+        Ok(ferry_sync::Blob(b"234".to_vec()))
     );
     let past_end = Script::default().on(&key("GET"), answer(416, vec![]));
     assert_eq!(
         replica(past_end).fetch(&id, span).await,
-        Ok(porter_sync::Blob(vec![]))
+        Ok(ferry_sync::Blob(vec![]))
     );
     let busy = Response::builder()
         .status(503)
@@ -274,20 +274,20 @@ async fn fetch_and_write_statuses_map_to_the_contract() {
         .on(&key("PUT"), busy);
     let r = replica(script);
     assert_eq!(
-        r.fetch(&id, porter_sync::ByteRange::Whole).await,
+        r.fetch(&id, ferry_sync::ByteRange::Whole).await,
         Err(ReplicaError::Transient(RetryAfter(17)))
     );
-    let put = porter_sync::PutItem {
-        target: porter_sync::PutTarget::Existing(id),
-        content: porter_sync::Blob(b"x".to_vec()),
+    let put = ferry_sync::PutItem {
+        target: ferry_sync::PutTarget::Existing(id),
+        content: ferry_sync::Blob(b"x".to_vec()),
         hash: None,
     };
     assert_eq!(
         r.put(
             put,
-            porter_sync::BaseVersion::At(RemoteVersion("\"e\"".into()))
+            ferry_sync::BaseVersion::At(RemoteVersion("\"e\"".into()))
         )
         .await,
-        Err(porter_sync::PutRefused::Transient(RetryAfter(17)))
+        Err(ferry_sync::PutRefused::Transient(RetryAfter(17)))
     );
 }

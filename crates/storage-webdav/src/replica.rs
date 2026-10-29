@@ -1,20 +1,20 @@
-//! [`WebDavReplica`]: porter-sync's [`Replica`] over one folder of a WebDAV server.
+//! [`WebDavReplica`]: ferry-sync's [`Replica`] over one folder of a WebDAV server.
 
 use crate::feed::{Known, Pending};
 use crate::path::Root;
 use crate::requests;
 use dav_proto::parse_multistatus;
+use ferry_sync::Clock;
+use ferry_sync::status::{read_error, unreached};
+use ferry_sync::{
+    BaseVersion, Blob, ByteRange, ChangePage, Cursor, PutItem, PutRefused, Quota, RemoteId,
+    RemoteVersion, Replica, ReplicaError,
+};
 use porter_capability::{Access, Delta, HashKind, StorageCap, StorageScope};
 use porter_http::http::header::RANGE;
 use porter_http::http::{Method, Request, Response};
 use porter_http::{Http, request};
 use porter_ids::{Bytes, WebUrl};
-use porter_sync::Clock;
-use porter_sync::status::{read_error, unreached};
-use porter_sync::{
-    BaseVersion, Blob, ByteRange, ChangePage, Cursor, PutItem, PutRefused, Quota, RemoteId,
-    RemoteVersion, Replica, ReplicaError,
-};
 use std::sync::{Mutex, MutexGuard, PoisonError};
 
 /// How many changes a page of the feed holds unless told otherwise.
@@ -128,7 +128,7 @@ impl<H: Http> WebDavReplica<H> {
         }
         let text = String::from_utf8_lossy(response.body());
         let status = parse_multistatus(&text)
-            .map_err(|_| ReplicaError::Transient(porter_sync::RetryAfter(30)))?;
+            .map_err(|_| ReplicaError::Transient(ferry_sync::RetryAfter(30)))?;
         let reported = dav_proto::quota(&status);
         let used = reported.used.unwrap_or(0);
         Ok(Quota {

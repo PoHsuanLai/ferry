@@ -10,6 +10,9 @@ use crate::common;
 use common::bus::PrivateBus;
 use common::hosted::{Link, host};
 use common::{Known, PhotosGrant, client};
+use ferry_bus::SyncProxy;
+use ferry_bus::{CONFLICT_KEY_NUMBER, RESOLVE_KEEP_REMOTE, SYNC_ERROR_NO_SUCH_CONFLICT};
+use ferry_fake_graph::{FakeGraph, GraphHandle};
 use porter_callers::CallerRole;
 use porter_capability::StorageScope;
 use porter_capability::{CapabilityKind, Claim, Offer, Provenance, Subject};
@@ -23,10 +26,8 @@ use porter_core::{
     GrantKey,
     consent::{Decision, Grant, GrantScope, Usage},
 };
-use porter_dbus::sync::SyncProxy;
-use porter_dbus::sync::{CONFLICT_KEY_NUMBER, RESOLVE_KEEP_REMOTE, SYNC_ERROR_NO_SUCH_CONFLICT};
 use porter_fake::FakeProvider;
-use porter_fake_servers::{FakeGraph, GraphHandle, Running};
+use porter_fake_servers::Running;
 use porter_ids::UnixSeconds;
 use porter_provider::Provider;
 use porter_secrets::{MemorySecrets, Secrets};
@@ -211,7 +212,7 @@ async fn rig(photos: PhotosGrant) -> Rig {
         settings: quick(),
         network,
         owners: Access::default(),
-        clock: porter_sync::Clock::new(porter_ids::clock::SystemClock),
+        clock: ferry_sync::Clock::new(porter_ids::clock::SystemClock),
         nonce: "t1".to_owned(),
         millis: Arc::new(syncd::datasets::photos::ManualMillis::at(1_700_000_000_000)),
     };

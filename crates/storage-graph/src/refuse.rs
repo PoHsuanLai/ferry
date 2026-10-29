@@ -4,10 +4,10 @@
 //! (open in an Office app there, or checked out).
 
 use crate::json::ErrorBody;
+use ferry_sync::PutRefused;
+use ferry_sync::status::retry_after;
 use porter_http::http::Response;
 use porter_ids::UnixSeconds;
-use porter_sync::PutRefused;
-use porter_sync::status::retry_after;
 
 /// The code an error's answer gives (`nameAlreadyExists`, `invalidRequest`).
 pub fn error_code(response: &Response<Vec<u8>>) -> Option<String> {
@@ -30,8 +30,8 @@ pub fn write_error(response: &Response<Vec<u8>>, now: UnixSeconds) -> PutRefused
 #[cfg(test)]
 mod tests {
     use super::*;
-    use porter_sync::RetryAfter;
-    use porter_sync::status::RETRY;
+    use ferry_sync::RetryAfter;
+    use ferry_sync::status::RETRY;
 
     fn answer(status: u16, retry: Option<&str>) -> Response<Vec<u8>> {
         retry
