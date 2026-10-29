@@ -1,0 +1,151 @@
+[workspace]
+resolver = "3"
+members = [
+  "crates/ferry-sync",
+  "crates/ferry-bus",
+  "crates/ferry-drive",
+  "crates/ferry-drive-fuse",
+  "crates/ferry-mountd",
+  "crates/ferry-fake-graph",
+  "crates/ferry-rig",
+  "crates/storage-webdav",
+  "crates/storage-graph",
+  "crates/storage-gdrive",
+  "crates/quickxorhash",
+  "crates/windows-zones",
+  "crates/syncd",
+  "crates/syncd-fakes",
+]
+
+[workspace.package]
+version = "0.1.0"
+edition = "2024"
+license = "MIT OR Apache-2.0"
+# What quire declares; the toolchain itself is pinned in rust-toolchain.toml.
+rust-version = "1.92"
+repository = "https://github.com/PoHsuanLai/ferry"
+publish = false
+
+[workspace.dependencies]
+ferry-sync      = { path = "crates/ferry-sync" }
+ferry-bus       = { path = "crates/ferry-bus" }
+ferry-drive     = { path = "crates/ferry-drive" }
+ferry-drive-fuse = { path = "crates/ferry-drive-fuse" }
+ferry-mountd    = { path = "crates/ferry-mountd" }
+ferry-fake-graph = { path = "crates/ferry-fake-graph" }
+storage-webdav  = { path = "crates/storage-webdav" }
+storage-graph   = { path = "crates/storage-graph" }
+storage-gdrive  = { path = "crates/storage-gdrive" }
+quickxorhash    = { path = "crates/quickxorhash" }
+windows-zones   = { path = "crates/windows-zones" }
+syncd           = { path = "crates/syncd" }
+syncd-fakes     = { path = "crates/syncd-fakes" }
+
+# porter's crates, by git at the rev ferry is built against (as mailo and steward take them).
+# `PORTER_REV` is the porter commit that has left the sync crates (its branch step7-ferry); it is
+# filled in when that commit is pushed, and Cargo.lock is made then.
+porter-ids = { git = "https://github.com/PoHsuanLai/porter", rev = "PORTER_REV" }
+porter-capability = { git = "https://github.com/PoHsuanLai/porter", rev = "PORTER_REV" }
+porter-core = { git = "https://github.com/PoHsuanLai/porter", rev = "PORTER_REV" }
+porter-wire = { git = "https://github.com/PoHsuanLai/porter", rev = "PORTER_REV" }
+porter-match = { git = "https://github.com/PoHsuanLai/porter", rev = "PORTER_REV" }
+porter-sheet = { git = "https://github.com/PoHsuanLai/porter", rev = "PORTER_REV" }
+porter-fs = { git = "https://github.com/PoHsuanLai/porter", rev = "PORTER_REV" }
+porter-provider = { git = "https://github.com/PoHsuanLai/porter", rev = "PORTER_REV" }
+porter-secrets = { git = "https://github.com/PoHsuanLai/porter", rev = "PORTER_REV" }
+porter-service-core = { git = "https://github.com/PoHsuanLai/porter", rev = "PORTER_REV" }
+porter-service-accounts = { git = "https://github.com/PoHsuanLai/porter", rev = "PORTER_REV" }
+porter-service = { git = "https://github.com/PoHsuanLai/porter", rev = "PORTER_REV" }
+porter-store = { git = "https://github.com/PoHsuanLai/porter", rev = "PORTER_REV" }
+porter-sheets = { git = "https://github.com/PoHsuanLai/porter", rev = "PORTER_REV" }
+porter-callers = { git = "https://github.com/PoHsuanLai/porter", rev = "PORTER_REV" }
+porter-dbus = { git = "https://github.com/PoHsuanLai/porter", rev = "PORTER_REV" }
+porter-dbus-macros = { git = "https://github.com/PoHsuanLai/porter", rev = "PORTER_REV" }
+porter-client = { git = "https://github.com/PoHsuanLai/porter", rev = "PORTER_REV" }
+porter-client-dbus = { git = "https://github.com/PoHsuanLai/porter", rev = "PORTER_REV" }
+porter-client-inproc = { git = "https://github.com/PoHsuanLai/porter", rev = "PORTER_REV" }
+porter-families = { git = "https://github.com/PoHsuanLai/porter", rev = "PORTER_REV" }
+porter-family-oauth = { git = "https://github.com/PoHsuanLai/porter", rev = "PORTER_REV" }
+porter-daemon = { git = "https://github.com/PoHsuanLai/porter", rev = "PORTER_REV", default-features = false }
+porter-http = { git = "https://github.com/PoHsuanLai/porter", rev = "PORTER_REV" }
+porter-http-reqwest = { git = "https://github.com/PoHsuanLai/porter", rev = "PORTER_REV" }
+porter-http-relay = { git = "https://github.com/PoHsuanLai/porter", rev = "PORTER_REV" }
+dav-proto = { git = "https://github.com/PoHsuanLai/porter", rev = "PORTER_REV" }
+test-kit = { git = "https://github.com/PoHsuanLai/porter", rev = "PORTER_REV" }
+porter-fake = { git = "https://github.com/PoHsuanLai/porter", rev = "PORTER_REV" }
+porter-fake-servers = { git = "https://github.com/PoHsuanLai/porter", rev = "PORTER_REV" }
+porter-rig = { git = "https://github.com/PoHsuanLai/porter", rev = "PORTER_REV" }
+
+# quire's live settings modules (`org.quire.SettingsModule1`), for syncd: the Settings rows it
+# serves. By git at the rev porter pins.
+ds-settings     = { git = "https://github.com/PoHsuanLai/quire.git", rev = "d17e19da64c8845d8eb413784b2d84f177a86767", features = ["live", "tokio"] }
+
+# From quire's pinned block (`docs/workspace-deps.toml`), copied verbatim: only the lines ferry
+# names itself, as porter does.
+tokio = { version = "1", features = ["rt-multi-thread", "sync", "time", "macros", "net", "io-util", "process"] }
+thiserror = "2"
+roxmltree = "0.21"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+zbus = { version = "5.19", default-features = false, features = ["tokio"] }
+toml = "1"
+base64 = "0.22"
+sha2 = "0.10"
+# The RustCrypto hasher traits quickxorhash implements, at the line sha2 and md-5 already bring.
+digest = "0.10"
+md-5 = "0.10"
+# Lower-case hex of a digest or a byte string (MIT OR Apache-2.0).
+hex = "0.4"
+clap = { version = "4", features = ["derive"] }
+# Scratch directories that remove themselves when dropped (MIT OR Apache-2.0).
+tempfile = "3"
+# ferry-drive's cached byte ranges (MIT OR Apache-2.0, 1.8.0).
+rangemap = "1.8"
+# Calendar dates and RFC 3339 times (MIT OR Apache-2.0). No default features: no system clock, no
+# time zone database, no locale; `alloc` is for `format`.
+chrono = { version = "0.4", default-features = false, features = ["alloc"] }
+# syncd's media type by extension (MIT, 2.0.5).
+mime_guess = { version = "2", default-features = false }
+# syncd's HTML-to-text of a Graph event body (MIT, 0.3.0, no dependencies; html2text brings
+# html5ever and its tree for a task this small).
+nanohtml2text = "0.3"
+# ferry-mountd's socket activation (Apache-2.0, 1.0.2; brings libc).
+listenfd = "1"
+# syncd's journal: SQLCipher built from source with a vendored OpenSSL, used unkeyed (quire's pinned line).
+rusqlite = { version = "0.40", features = ["bundled-sqlcipher-vendored-openssl"] }
+rustix = { version = "1.1", default-features = false, features = ["std", "event", "fs", "net", "time", "process"] }
+
+[workspace.lints.rust]
+unsafe_code = "deny"
+missing_debug_implementations = "warn"
+
+# Dependencies keep no debug info (ferry's own crates keep line tables, `.cargo/config.toml`):
+# it is most of what a test link carries.
+[profile.dev.package."*"]
+debug = false
+
+# The crypto crates run optimised in the tests: syncd's tests open the keyring file backend, whose
+# key derivation takes 100 000 rounds of PBKDF2. They are small, so the build cost is a few
+# seconds, once.
+[profile.dev.package.pbkdf2]
+opt-level = 3
+[profile.dev.package.hmac]
+opt-level = 3
+[profile.dev.package.sha2]
+opt-level = 3
+[profile.dev.package.digest]
+opt-level = 3
+[profile.dev.package.aes]
+opt-level = 3
+[profile.dev.package.cbc]
+opt-level = 3
+[profile.dev.package.cipher]
+opt-level = 3
+[profile.dev.package.block-buffer]
+opt-level = 3
+[profile.dev.package.crypto-common]
+opt-level = 3
+[profile.dev.package.generic-array]
+opt-level = 3
+[profile.dev.package.inout]
+opt-level = 3

@@ -1,0 +1,6 @@
+/target
+/target-*
+.claude/
+# Logs of a build or a gate run in the checkout's top folder.
+/*.log
+/*.log.build

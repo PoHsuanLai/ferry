@@ -10,10 +10,10 @@ they run the drive in memory and mount nothing.
 
 ## What the computer needs
 
-- The `fuse3` package (`fusermount3` on `PATH`, and `/dev/fuse`). porter does not link libfuse:
+- The `fuse3` package (`fusermount3` on `PATH`, and `/dev/fuse`). ferry does not link libfuse:
   it runs `fusermount3` as a process of its own. Without it the drive still lists, and Files says
   "Files can't show this drive on this computer."
-- porter installed with `scripts/install.sh`, which puts in `porter-mountd` with its socket
+- ferry installed with `scripts/install.sh`, which puts in `porter-mountd` with its socket
   enabled for every user. syncd's unit cannot mount: `NoNewPrivileges=yes` refuses the setuid
   `fusermount3`, `PrivateDevices=yes` hides `/dev/fuse`, and its mount namespace of its own would
   hide the mount from the session. So syncd asks porter-mountd, a small user service outside that
