@@ -237,7 +237,10 @@ impl<T: GrantsLink + AccountsLink> Keep<T> {
         class: SyncClass,
         toggle: Toggle,
     ) -> Result<(), SwitchError> {
-        let snapshot = self.snapshot().await.map_err(|_| SwitchError::Unreachable)?;
+        let snapshot = self
+            .snapshot()
+            .await
+            .map_err(|_| SwitchError::Unreachable)?;
         let row = snapshot
             .account(account)
             .ok_or(SwitchError::UnknownAccount)?;
@@ -253,10 +256,14 @@ impl<T: GrantsLink + AccountsLink> Keep<T> {
                     need: need_for(row, class),
                     class: class.class(),
                     usage: Usage::Background,
+                    account: Some(account.clone()),
                 };
-                self.ask(account, &offer).await
+                self.ask(&offer).await
             }
-            _ => self.revoke(&snapshot.grants, &keys_of(account, class)).await,
+            _ => {
+                self.revoke(&snapshot.grants, &keys_of(account, class))
+                    .await
+            }
         }
     }
 
@@ -280,7 +287,10 @@ impl<T: GrantsLink + AccountsLink> Keep<T> {
         account: &AccountId,
         toggle: Toggle,
     ) -> Result<(), SwitchError> {
-        let snapshot = self.snapshot().await.map_err(|_| SwitchError::Unreachable)?;
+        let snapshot = self
+            .snapshot()
+            .await
+            .map_err(|_| SwitchError::Unreachable)?;
         let row = snapshot
             .account(account)
             .ok_or(SwitchError::UnknownAccount)?;
@@ -309,8 +319,9 @@ impl<T: GrantsLink + AccountsLink> Keep<T> {
                     need: crate::datasets::storage::drive_need(),
                     class: porter_core::DataClass::Files,
                     usage: Usage::Background,
+                    account: Some(account.clone()),
                 };
-                self.ask(account, &offer).await
+                self.ask(&offer).await
             }
             _ => self.revoke(&snapshot.grants, &[drive_key(account)]).await,
         }
@@ -324,7 +335,10 @@ impl<T: GrantsLink + AccountsLink> Keep<T> {
         account: &AccountId,
         toggle: Toggle,
     ) -> Result<(), SwitchError> {
-        let snapshot = self.snapshot().await.map_err(|_| SwitchError::Unreachable)?;
+        let snapshot = self
+            .snapshot()
+            .await
+            .map_err(|_| SwitchError::Unreachable)?;
         snapshot
             .account(account)
             .ok_or(SwitchError::UnknownAccount)?;
@@ -367,18 +381,16 @@ impl<T: GrantsLink + AccountsLink> Keep<T> {
             .find(|id| drive_dir(id).is_some_and(|dir| dir.as_str() == drive))
     }
 
-    /// Asks accountd for the grant `offer` names, for `account`: accountd's chooser and consent
-    /// sheet. The grant of another account, which the person may pick in the chooser, is theirs
-    /// to give and stays; this switch stays off then.
-    async fn ask(&self, account: &AccountId, offer: &ConsentOffer) -> Result<(), SwitchError> {
+    /// Asks accountd for the grant `offer` names, for the one account it names: accountd's
+    /// consent sheet is about that account alone, and its answer is a grant for it or a refusal.
+    async fn ask(&self, offer: &ConsentOffer) -> Result<(), SwitchError> {
         let _one_switch = self.turning.lock().await;
         match self
             .grants
             .request_grant(offer, &ParentWindow::Unparented)
             .await
         {
-            Ok(chosen) if chosen.account == *account => Ok(()),
-            Ok(_) => Err(SwitchError::NotGiven),
+            Ok(_) => Ok(()),
             Err(GrantsError::Refused(_) | GrantsError::Busy) => Err(SwitchError::NotGiven),
             Err(_) => Err(SwitchError::Unreachable),
         }
@@ -400,7 +412,10 @@ impl<T: GrantsLink + AccountsLink> Keep<T> {
     /// back. What was kept is returned. A removal that fails leaves the account and starts its
     /// drive again; what was kept stays where it is, so trying again keeps nothing twice.
     pub async fn remove(&self, account: &AccountId) -> Result<Vec<Kept>, RemoveError> {
-        let snapshot = self.snapshot().await.map_err(|_| RemoveError::Unreachable)?;
+        let snapshot = self
+            .snapshot()
+            .await
+            .map_err(|_| RemoveError::Unreachable)?;
         snapshot.account(account).ok_or(RemoveError::Unknown)?;
         let dir = drive_dir(account).ok_or(RemoveError::Unknown)?;
         let failed = |why: RemoveError| {

@@ -47,8 +47,8 @@ The crates of porter (`porter-*`, `dav-proto`, `test-kit`) are taken by git rev:
 | `ferry-fake-graph` | `porter-core`, `porter-fake`, `porter-fake-servers` (the HTTP server, the issuer), `porter-ids`, `porter-provider`, `quickxorhash`, base64, serde_json, tokio (and nothing may depend on it but as a dev dependency) |
 | `ferry-rig` | `ferry-bus`, `ferry-fake-graph`, `porter-dbus` (`from_vardict`), `porter-fake-servers`, `porter-rig`, clap, serde, serde_json, tokio (with `signal`), zbus (and nothing may depend on it) |
 
-Cross-repo dependencies are git deps at pinned revs (`PORTER_REV` in the root `Cargo.toml` until
-porter's `step7-ferry` commit is pushed; `Cargo.lock` is made then).
+Cross-repo dependencies are git deps at pinned revs (the `rev` in the root `Cargo.toml`, a commit of
+porter's `step7-ferry` until it lands; `Cargo.lock` is made with it).
 
 ## 2. Modules
 

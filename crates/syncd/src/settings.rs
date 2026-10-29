@@ -326,9 +326,9 @@ fn account_keys(account: &Account, provider_label: Option<&str>, files: FilesRow
     keys.push(spec(
         &Key::Remove(id.clone()),
         section,
-        "Remove account",
-        "Stops syncing this account and deletes its copies on this computer. The account itself stays.",
-        action("Remove account", ActionWeight::Destructive),
+        "Stop syncing",
+        "Stops syncing this account and deletes its copies on this computer. The account itself stays in Internet Accounts.",
+        action("Stop Syncing", ActionWeight::Destructive),
         off(),
     ));
     keys
@@ -661,10 +661,7 @@ impl<T: GrantsLink + AccountsLink, C: Callers> LiveModule for SyncSettings<T, C>
                 let (keep, served) = (Arc::clone(&self.keep), Arc::clone(&self.served));
                 tokio::spawn(async move {
                     let before = keep.snapshot().await.map(|now| now.accounts.len());
-                    let outcome = keep
-                        .add_and_keep(&ParentWindow::Unparented)
-                        .await
-                        .map(drop);
+                    let outcome = keep.add_and_keep(&ParentWindow::Unparented).await.map(drop);
                     if let Err(why) = &outcome {
                         eprintln!("syncd: add account: {why}");
                     }
