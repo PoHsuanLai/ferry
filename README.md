@@ -21,6 +21,7 @@ vdir and PIM-mirror libraries by git rev.
 | --- | --- |
 | `ferry-sync` | the sync contract: `Replica`, anchors, base versions, conflicts, tombstones, and an in-memory replica |
 | `ferry-engine` | the dataset seam, the SQLite journal, the engine, the scheduler, the driver and the hub of running datasets, for every daemon that runs datasets (syncd, callie's calendard) |
+| `ferry-sync-service` | `org.quire.Sync1` over the hub, served by syncd and by callie's calendard |
 | `ferry-vdir`, `ferry-pim-feed`, `ferry-pim-mirror` | the vdir on disk, what a feed hands a mirror (sans-IO), and the mirror, its CalDAV/CardDAV source and its supervisor; syncd mirrors address books with them, callie calendars and task lists |
 | `storage-webdav`, `storage-graph`, `storage-gdrive` | the replicas: WebDAV, OneDrive's Graph and Google Drive |
 | `ferry-drive`, `ferry-drive-fuse`, `ferry-mountd` | files on demand over a drive's listing, the FUSE adapter and the mount helper |

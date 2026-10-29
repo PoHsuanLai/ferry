@@ -22,6 +22,8 @@ BUILDS=(
   # The libraries syncd runs its datasets with (their `testing` features are for tests only).
   "ferry-engine (default) :: -p ferry-engine"
   "ferry-pim-mirror (default) :: -p ferry-pim-mirror"
+  "ferry-sync-service (default) :: -p ferry-sync-service"
+  "ferry-sync-service (photos-picker) :: -p ferry-sync-service --features photos-picker"
   # The bus interfaces, alone and with the Photos Picker.
   "ferry-bus (default) :: -p ferry-bus"
   "ferry-bus (photos-picker) :: -p ferry-bus --features photos-picker"

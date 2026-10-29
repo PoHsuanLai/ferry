@@ -13,8 +13,6 @@
 //!   `Unavailable`; anything else `Failed`.
 //! - Nothing but ids, the page to open, a state word and the files' paths crosses the bus.
 
-#[cfg(feature = "photos-picker")]
-use super::errors::RefusedError;
 use crate::datasets::photos::google::{GooglePicker, PickerError, PickerState, SessionId};
 #[cfg(feature = "photos-picker")]
 use ferry_bus::SYNC_PATH;
@@ -23,6 +21,8 @@ use ferry_bus::{PICKER_PICKED, PICKER_WAITING, PhotosPickerServed, PhotosPickerS
 use ferry_engine::account::AccountDir;
 #[cfg(feature = "photos-picker")]
 use ferry_engine::hub::Access;
+#[cfg(feature = "photos-picker")]
+use ferry_sync_service::RefusedError;
 #[cfg(feature = "photos-picker")]
 use porter_callers::Callers;
 use porter_client::GrantsLink;

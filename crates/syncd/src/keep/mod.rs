@@ -6,8 +6,9 @@
 //!
 //! - [`Keep::set_sync`]: the sync switches. On asks accountd for the grant of the class
 //!   (`Grants::request_grant`): accountd's consent sheet shows the first time and its answer is
-//!   kept, so a later turning on finds the grant and asks nothing. Off takes the grant back, and
-//!   the mirror stops at the supervisor's next look; the files stay.
+//!   kept, so turning on again while the grant is still held finds it and asks nothing. Off takes
+//!   the grant back (`Revoke` deletes it), so turning on after that asks again; the mirror stops at
+//!   the supervisor's next look, and the files stay.
 //! - [`Keep::show_in_files`]: "Show in Files". On asks the person for the whole drive in a
 //!   sign-in of its own when the account was not given it yet (`Grants::extend_access`), then
 //!   asks for the grant of it, and the supervisor lists the drive at its next look; off takes the

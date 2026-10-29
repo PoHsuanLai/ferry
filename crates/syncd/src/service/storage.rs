@@ -19,7 +19,6 @@
 //!   until it leaves the bus. Each drive's item changes are gathered and sent together at most
 //!   ten times a second, each changed item with the folders above it.
 
-use super::errors::RefusedError;
 use crate::datasets::drive::{DriveEvent, DriveSet, LiveDrive};
 use crate::words;
 use ferry_bus::STORAGE_PATH;
@@ -31,6 +30,7 @@ use ferry_bus::{
 };
 use ferry_drive::{Node, NodeId, NodeKind, Reason, Status};
 use ferry_engine::hub::Access;
+use ferry_sync_service::RefusedError;
 use porter_callers::{Caller, CallerRole, Callers};
 use porter_dbus::Call;
 use porter_dbus::Details;

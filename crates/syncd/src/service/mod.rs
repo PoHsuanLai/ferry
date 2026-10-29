@@ -1,4 +1,5 @@
-//! `org.quire.Sync1` at `/org/quire/Sync1`, served over the [`Hub`] (design/31 §4.4).
+//! `org.quire.Sync1` at `/org/quire/Sync1`, served over the hub (design/31 §4.4). The object is
+//! `ferry-sync-service`'s (callie's calendard serves it too); what follows is what it does.
 //!
 //! - The caller is the connection's, found by porter-dbus's `Callers` (cgroup, the one table both
 //!   daemons share); a sender nothing names is `AccessDenied` and a caller never says who it is.
@@ -25,7 +26,7 @@
 //!   syncd writes no audit events (it has none for pause and resume either), so this is not
 //!   audited.
 //! - `SyncNow(dataset)` ("Sync now") has a dataset sync at once instead of at its next scheduled
-//!   look: [`Hub::sync_now`] wakes its driver, which runs a cycle right away, or right after the
+//!   look: `Hub::sync_now` wakes its driver, which runs a cycle right away, or right after the
 //!   one running. Whoever may pause the dataset may call it; a dataset the caller cannot see
 //!   answers `NoFittingAccount`, a paused one `org.quire.Sync1.Error.Paused`. The reply comes
 //!   when the request is taken, not when the cycle ends.
@@ -37,16 +38,29 @@
 //! - `Progress`, `Conflict` and `NeedsConfirmation` go to the connections that called and may see the dataset, never
 //!   broadcast; a connection that leaves the bus is forgotten.
 
-mod errors;
-mod object;
 mod picker;
-mod status;
 mod storage;
 
-pub use errors::RefusedError;
-pub use object::serve;
+use ferry_bus::SYNC_BUS;
+use ferry_engine::hub::Hub;
+use porter_callers::Callers;
+use zbus::Connection;
+
+/// Serves `org.quire.Sync1` on `connection` over `hub`, with `callers` saying who calls, and
+/// claims `org.quire.Sync1` once the connection takes calls ([`porter_dbus::serve_ready`]). Any
+/// other object on `connection` (the drives, the Photos picker) is registered before this is
+/// called.
+pub async fn serve<C: Callers>(connection: &Connection, hub: Hub, callers: C) -> zbus::Result<()> {
+    ferry_sync_service::register(connection, hub, callers).await?;
+    // Every object is registered; the name is the promise that calls are taken: claim it only
+    // once they are.
+    porter_dbus::serve_ready(connection).await?;
+    connection.request_name(SYNC_BUS).await?;
+    Ok(())
+}
+
+pub use ferry_sync_service::RefusedError;
 #[cfg(feature = "photos-picker")]
 pub use picker::serve_picker;
 pub use picker::{PickerDesk, Pickers};
-pub use status::{conflict_details, held_details, progress_details, status_details};
 pub use storage::{FilesApps, ITEMS_EVERY, absolute, drive_details, item_details, serve_storage};

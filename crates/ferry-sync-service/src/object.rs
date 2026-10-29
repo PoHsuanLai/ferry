@@ -2,8 +2,8 @@
 
 use super::errors::RefusedError;
 use super::status::{conflict_details, held_details, progress_details, status_details};
+use ferry_bus::SYNC_PATH;
 use ferry_bus::{RESOLVE_KEEP_LOCAL, RESOLVE_KEEP_REMOTE};
-use ferry_bus::{SYNC_BUS, SYNC_PATH};
 use ferry_bus::{SyncServed, SyncServer};
 use ferry_engine::hub::{DatasetName, Event, Hub};
 use ferry_engine::resolve::{ConfirmError, ConflictNumber, How, SettleError, SyncNowError};
@@ -63,7 +63,7 @@ impl<C: Callers> Core<C> {
             .callers
             .caller_of(sender.as_str())
             .await
-            .ok_or_else(|| RefusedError::access_denied("syncd does not know this caller"))?;
+            .ok_or_else(|| RefusedError::access_denied("the daemon does not know this caller"))?;
         held(&self.roster).insert(sender.to_string(), caller.clone());
         Ok(caller)
     }
@@ -254,11 +254,11 @@ impl<C: Callers> SyncServer for SyncObject<C> {
         })
     }
 
-    /// Joins the caller to the connections syncd tells, without asking for any data: any
-    /// identified caller may call it. A connection is told only after it has called syncd, so
+    /// Joins the caller to the connections the daemon tells, without asking for any data: any
+    /// identified caller may call it. A connection is told only after it has called the daemon, so
     /// the shell calls this once at start. The shell (`CallerRole::SheetHost`) is then told
     /// `NeedsConfirmation` for every dataset, the holds already on at once, and nothing else of
-    /// a dataset it does not own. Errors: `AccessDenied` for a sender syncd does not know.
+    /// a dataset it does not own. Errors: `AccessDenied` for a sender the daemon does not know.
     async fn watch(&self, Call { header, .. }: Call<'_>) -> Result<(), RefusedError> {
         let caller = self.0.identify(&header).await?;
         let sender = header
@@ -276,10 +276,17 @@ impl<C: Callers> SyncServer for SyncObject<C> {
     }
 }
 
-/// Serves `org.quire.Sync1` on `connection` over `hub`, with `callers` saying who calls, and
-/// claims `org.quire.Sync1` once the connection takes calls ([`porter_dbus::serve_ready`]). Any
-/// other object on `connection` (the Photos picker) is registered before this is called.
-pub async fn serve<C: Callers>(connection: &Connection, hub: Hub, callers: C) -> zbus::Result<()> {
+/// Serves the `org.quire.Sync1` interface at `/org/quire/Sync1` on `connection` over `hub`, with
+/// `callers` saying who calls: the dataset control (status, pause, resume, resolve, confirm
+/// discard, sync now, the signals) of whatever daemon runs the datasets in `hub`. The bus name is
+/// the daemon's to claim, once every object it serves is registered
+/// ([`porter_dbus::serve_ready`], then `request_name`): syncd's is `org.quire.Sync1`, callie's
+/// calendard's `org.quire.Calendar1`.
+pub async fn register<C: Callers>(
+    connection: &Connection,
+    hub: Hub,
+    callers: C,
+) -> zbus::Result<()> {
     let core = Arc::new(Core {
         hub,
         callers,
@@ -321,10 +328,6 @@ pub async fn serve<C: Callers>(connection: &Connection, hub: Hub, callers: C) ->
             }
         }
     });
-    // Every object is registered (the Photos picker, when it runs, before this); the name is the
-    // promise that calls are taken: claim it only once they are.
-    porter_dbus::serve_ready(connection).await?;
-    connection.request_name(SYNC_BUS).await?;
     Ok(())
 }
 

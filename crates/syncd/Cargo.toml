@@ -16,6 +16,7 @@ ferry-drive-fuse = { workspace = true }
 ferry-engine = { workspace = true }
 ferry-pim-feed = { workspace = true }
 ferry-pim-mirror = { workspace = true }
+ferry-sync-service = { workspace = true }
 ferry-sync = { workspace = true }
 ferry-vdir = { workspace = true }
 storage-gdrive = { workspace = true }
@@ -91,4 +92,4 @@ workspace = true
 test-proc-root = ["porter-callers/test-proc-root"]
 # Serves `org.quire.Photos1.Picker` beside Sync1 (ferry-bus's feature of the same name declares
 # it). Off by default: no Photos app ships in v1.
-photos-picker = ["ferry-bus/photos-picker"]
+photos-picker = ["ferry-bus/photos-picker", "ferry-sync-service/photos-picker"]

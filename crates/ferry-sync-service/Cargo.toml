@@ -1,0 +1,32 @@
+[package]
+name = "ferry-sync-service"
+description = "The dataset control a daemon that runs ferry-engine datasets serves: org.quire.Sync1 (ferry-bus's interface) over ferry-engine's hub, with the vardicts it sends and the refusals it answers. syncd serves it as org.quire.Sync1 and callie's calendard as org.quire.Calendar1; the bus name is the daemon's."
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+rust-version.workspace = true
+repository.workspace = true
+publish.workspace = true
+
+[dependencies]
+ferry-bus = { workspace = true }
+ferry-engine = { workspace = true }
+ferry-sync = { workspace = true }
+# Who is calling, and the bus types the object answers with.
+porter-callers = { workspace = true }
+porter-dbus = { workspace = true }
+porter-wire = { workspace = true }
+serde_json = { workspace = true }
+thiserror = { workspace = true }
+tokio = { workspace = true }
+zbus = { workspace = true }
+
+[dev-dependencies]
+porter-ids = { workspace = true }
+
+[features]
+# The Photos Picker's refusals (`ferry-bus`'s feature of the same name).
+photos-picker = ["ferry-bus/photos-picker"]
+
+[lints]
+workspace = true

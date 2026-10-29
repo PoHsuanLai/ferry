@@ -33,6 +33,7 @@ RULES=(
   "ferry-pim-feed: $EFFECTS $PORTER_HIDDEN"
   "ferry-engine: $LIBRARY_HIDDEN porter-client"
   "ferry-pim-mirror: $LIBRARY_HIDDEN"
+  "ferry-sync-service: reqwest hyper ureq oo7 keyring secret-service interprocess latchkey ds-settings porter-service porter-service-core porter-service-accounts porter-secrets porter-store porter-sheets porter-client porter-client-dbus porter-client-inproc"
   "storage-webdav: $EFFECTS $PORTER_HIDDEN"
   "storage-graph: $EFFECTS $PORTER_HIDDEN"
   "storage-gdrive: $EFFECTS $PORTER_HIDDEN"
@@ -132,6 +133,7 @@ EDGES=(
   "ferry-vdir: porter-core porter-fs"
   "ferry-pim-feed: ferry-sync ferry-vdir porter-capability porter-core porter-http porter-ids"
   "ferry-engine: ferry-sync porter-callers porter-capability porter-core porter-ids"
+  "ferry-sync-service: ferry-bus ferry-engine ferry-sync porter-callers porter-dbus porter-wire"
   "ferry-pim-mirror: dav-proto ferry-engine ferry-pim-feed ferry-sync ferry-vdir porter-capability porter-client porter-core porter-http porter-http-relay porter-ids porter-match storage-webdav"
   "storage-webdav: dav-proto porter-capability porter-ids porter-http ferry-sync"
   "storage-graph: porter-capability porter-ids porter-http ferry-sync"
@@ -143,7 +145,7 @@ EDGES=(
   "ferry-fake-graph: porter-core porter-fake porter-fake-servers porter-ids porter-provider quickxorhash"
   "ferry-rig: ferry-bus ferry-fake-graph porter-dbus porter-fake-servers porter-rig"
   "syncd-fakes: ferry-bus porter-dbus"
-  "syncd: ds-settings ferry-engine ferry-pim-feed ferry-pim-mirror ferry-vdir porter-client porter-client-dbus porter-core porter-match porter-capability porter-wire porter-ids porter-daemon porter-callers porter-dbus porter-fs porter-http porter-http-relay ferry-bus ferry-drive ferry-drive-fuse ferry-sync storage-gdrive storage-graph storage-webdav"
+  "syncd: ds-settings ferry-engine ferry-pim-feed ferry-pim-mirror ferry-sync-service ferry-vdir porter-client porter-client-dbus porter-core porter-match porter-capability porter-wire porter-ids porter-daemon porter-callers porter-dbus porter-fs porter-http porter-http-relay ferry-bus ferry-drive ferry-drive-fuse ferry-sync storage-gdrive storage-graph storage-webdav"
 )
 for edge in "${EDGES[@]}"; do
   crate="${edge%%:*}"
