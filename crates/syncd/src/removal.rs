@@ -10,8 +10,9 @@
 //! accountd removing the account does not remove syncd's copies: the person removes them in the
 //! sync rows.
 
-use crate::paths::{AccountDir, Paths};
-use crate::service::Hub;
+use crate::paths::Paths;
+use ferry_engine::account::AccountDir;
+use ferry_engine::hub::Hub;
 use std::io::ErrorKind;
 
 /// Stops the account's datasets, waits until none is in a cycle, and deletes its journals and
@@ -78,8 +79,8 @@ mod tests {
         let drive = crate::datasets::drive::journal_path(&paths, &gone);
         crate::datasets::drive::DriveJournal::open(&drive).expect("the drive's journal");
         let hub = Hub::default();
-        let name = crate::service::DatasetName::parse("a1/files").expect("name");
-        let handle = hub.register(name, crate::service::Access::default());
+        let name = ferry_engine::hub::DatasetName::parse("a1/files").expect("name");
+        let handle = hub.register(name, ferry_engine::hub::Access::default());
 
         assert_eq!(wipe(&paths, &hub, &gone).await.expect("wipe"), 2);
         let left: BTreeSet<_> = [&paths.journals, &paths.mirrors]

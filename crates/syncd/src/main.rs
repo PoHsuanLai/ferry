@@ -19,8 +19,8 @@
 #![recursion_limit = "256"]
 
 use clap::Parser;
+use ferry_engine::scheduler::Network;
 use std::process::ExitCode;
-use syncd::scheduler::Network;
 use syncd::{Config, Daemon};
 
 /// ferry's sync service (`org.quire.Sync1`).

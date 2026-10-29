@@ -7,6 +7,10 @@
 use crate::common::bus::PrivateBus;
 use crate::common::hosted::{Link, host};
 use crate::common::{Known, PhotosGrant, client};
+use ferry_engine::account::AccountDir;
+use ferry_engine::hub::{Access, Hub};
+use ferry_engine::scheduler::{Network, Settings};
+use ferry_pim_mirror::AccountdUnavailable;
 use porter_callers::CallerRole;
 use porter_capability::StorageScope;
 use porter_capability::{CapabilityKind, Claim, Offer, Provenance, Subject};
@@ -30,14 +34,12 @@ use porter_secrets::{MemorySecrets, Secrets};
 use porter_service_core::registry::Registry;
 use std::sync::Arc;
 use std::sync::atomic::{AtomicBool, Ordering};
-use syncd::datasets::pim::{AccountdUnavailable, Wiring};
 use syncd::datasets::storage::{
-    ClientStorageGrants, StorageConfig, StorageGrants, StorageKind, StorageSupervisor,
+    ClientStorageGrants, StorageConfig, StorageGrants, StorageKind, StorageSupervisor, Wiring,
 };
 use syncd::keep::sync_app;
-use syncd::paths::{AccountDir, Paths};
-use syncd::scheduler::{Network, Settings};
-use syncd::service::{Access, Hub, serve};
+use syncd::paths::Paths;
+use syncd::service::serve;
 use tokio::sync::watch;
 
 pub const ACCOUNT: &str = "google-acct";
@@ -188,7 +190,6 @@ impl Rig {
             paths: self.paths.clone(),
             settings: quick(),
             network: self.network.clone(),
-            owners: Access::default(),
             clock: ferry_sync::Clock::new(porter_ids::clock::SystemClock),
             nonce: "t1".to_owned(),
             millis: Arc::new(syncd::datasets::photos::ManualMillis::at(1_700_000_000_000)),
@@ -363,7 +364,6 @@ fn placeholder(
             paths,
             settings: quick(),
             network: network.clone(),
-            owners: Access::default(),
             clock: ferry_sync::Clock::new(porter_ids::clock::SystemClock),
             nonce: "t1".to_owned(),
             millis: Arc::new(syncd::datasets::photos::ManualMillis::at(1_700_000_000_000)),
@@ -390,7 +390,7 @@ pub fn local(rig: &Rig, rel: &str) -> std::path::PathBuf {
 /// supervisor (the pickers it starts at each tick).
 #[cfg(feature = "photos-picker")]
 pub async fn serve_picker(rig: &Rig) {
-    let owners = syncd::service::Access {
+    let owners = ferry_engine::hub::Access {
         owners: [porter_core::AppName::parse(syncd::datasets::storage::PHOTOS_APP).expect("app")]
             .into(),
     };

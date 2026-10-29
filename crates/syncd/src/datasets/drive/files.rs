@@ -12,10 +12,11 @@
 //! nothing twice. A drive not shown (Files turned off, or it did not start) has its cache
 //! opened for this; a cache that cannot be read stops the removal.
 
-use crate::paths::{AccountDir, Paths};
+use crate::paths::Paths;
 use ferry_bus::DriveState;
 use ferry_drive::{Changed, Drive, DriveConfig, NodeId};
 use ferry_drive_fuse::Mounted;
+use ferry_engine::account::AccountDir;
 use std::collections::BTreeMap;
 use std::path::{Path, PathBuf};
 use std::sync::{Arc, Mutex, PoisonError};

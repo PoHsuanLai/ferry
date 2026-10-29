@@ -15,14 +15,14 @@
 
 #[cfg(feature = "photos-picker")]
 use super::errors::RefusedError;
-#[cfg(feature = "photos-picker")]
-use super::hub::Access;
 use crate::datasets::photos::google::{GooglePicker, PickerError, PickerState, SessionId};
-use crate::paths::AccountDir;
 #[cfg(feature = "photos-picker")]
 use ferry_bus::SYNC_PATH;
 #[cfg(feature = "photos-picker")]
 use ferry_bus::{PICKER_PICKED, PICKER_WAITING, PhotosPickerServed, PhotosPickerServer};
+use ferry_engine::account::AccountDir;
+#[cfg(feature = "photos-picker")]
+use ferry_engine::hub::Access;
 #[cfg(feature = "photos-picker")]
 use porter_callers::Callers;
 use porter_client::GrantsLink;

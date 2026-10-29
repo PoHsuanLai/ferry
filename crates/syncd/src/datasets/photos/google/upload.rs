@@ -17,7 +17,7 @@
 
 use super::api::{AlbumId, ApiError, MediaId, PhotosApi};
 use super::ledger::{Entry, Kept, LedgerError};
-use crate::dataset::fingerprint;
+use ferry_engine::dataset::fingerprint;
 use ferry_sync::DELETED;
 use ferry_sync::{
     Anchor, BaseVersion, Blob, ByteRange, ChangePage, Cursor, More, PutItem, PutRefused, PutTarget,

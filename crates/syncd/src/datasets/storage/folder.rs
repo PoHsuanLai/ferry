@@ -7,8 +7,8 @@
 //! (`.tmp-*`, see `cas`) are never listed. Symbolic links are not followed or listed. Empty
 //! folders are not items.
 
-use crate::dataset::{Dataset, DatasetError, DatasetId, fingerprint};
 use crate::datasets::photos::cas::{self, hash_file};
+use ferry_engine::dataset::{Dataset, DatasetError, DatasetId, fingerprint};
 use ferry_sync::{Blob, ConflictRule, ContentHash, ItemPath, LocalId, Scanned};
 use porter_ids::Bytes;
 use std::io;
@@ -319,6 +319,6 @@ mod tests {
         let (folder, _dir) = dataset("folder-rule");
         assert_eq!(folder.id().as_str(), SLUG);
         assert_eq!(folder.conflict_rule(), ConflictRule::ShowInApp);
-        assert_eq!(folder.direction(), crate::dataset::Direction::TwoWay);
+        assert_eq!(folder.direction(), ferry_engine::dataset::Direction::TwoWay);
     }
 }

@@ -1,9 +1,9 @@
 //! The vardicts `Sync1` sends: `Status` (anchor age, pending, conflicts, paused, syncing, quota) and the
 //! two signals' details.
 
-use super::hub::{DatasetName, StatusSnapshot};
-use crate::scheduler::Pausing;
 use ferry_bus::{CONFLICT_KEY_NUMBER, STATUS_KEY_QUOTA};
+use ferry_engine::hub::{DatasetName, StatusSnapshot};
+use ferry_engine::scheduler::Pausing;
 use ferry_sync::{BaseVersion, MassDelete, Quota, RemoteSide, StoredConflict};
 use porter_dbus::{Details, to_vardict, zvariant};
 use porter_wire::names::ACCOUNTS_PATH;

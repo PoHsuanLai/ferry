@@ -1,0 +1,38 @@
+[package]
+name = "ferry-pim-mirror"
+description = "Calendars, address books and task lists mirrored into a local vdir, read-only: the PimMirror dataset of one collection, the CalDAV/CardDAV source, the relays and the Google API client the sources are built on, the grants that say which accounts to mirror, and the supervisor that keeps every granted account's collections running. The daemon chooses the sources."
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+rust-version.workspace = true
+repository.workspace = true
+publish.workspace = true
+
+[dependencies]
+ferry-engine = { workspace = true }
+ferry-pim-feed = { workspace = true }
+ferry-sync = { workspace = true }
+ferry-vdir = { workspace = true }
+storage-webdav = { workspace = true }
+# Accounts, grants and relays: accountd's, reached through porter-client.
+porter-client = { workspace = true }
+porter-capability = { workspace = true }
+porter-core = { workspace = true }
+porter-match = { workspace = true }
+porter-ids = { workspace = true }
+dav-proto = { workspace = true, features = ["discover"] }
+porter-http = { workspace = true }
+porter-http-relay = { workspace = true }
+serde = { workspace = true }
+serde_json = { workspace = true }
+hex = { workspace = true }
+sha2 = { workspace = true }
+thiserror = { workspace = true }
+tokio = { workspace = true }
+
+[dev-dependencies]
+ferry-sync = { workspace = true, features = ["testing"] }
+tempfile = { workspace = true }
+
+[lints]
+workspace = true

@@ -8,7 +8,7 @@
 //! its Photos folders), a `google_drive` endpoint is Drive's app data folder, and the
 //! `google_photos_upload` and `google_photos_picker` endpoints are Google Photos.
 
-use crate::datasets::pim::AccountdUnavailable;
+use ferry_pim_mirror::AccountdUnavailable;
 use porter_capability::{Access, Albums, Delta, LibraryRead, StorageScope};
 use porter_client::{Found, Grants, GrantsLink};
 use porter_core::consent::Usage;

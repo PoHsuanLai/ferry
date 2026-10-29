@@ -92,7 +92,7 @@ pub async fn client(
 /// (an edit, a remote change) has happened, however loaded the machine is. A dataset that is
 /// paused, or not running, is not waited for. This is the wait for "a cycle passed"; no poll
 /// interval, no sleep.
-pub async fn a_cycle_of_each(hub: &syncd::service::Hub) {
+pub async fn a_cycle_of_each(hub: &ferry_engine::hub::Hub) {
     let mut asked = Vec::new();
     for name in hub.names() {
         let Some(cycles) = hub.cycles(&name) else {
@@ -116,7 +116,7 @@ pub async fn a_cycle_of_each(hub: &syncd::service::Hub) {
 /// runs fewer polls in that time, which makes the proof thinner, never the test flaky. A wait
 /// for something to happen is [`eventually`].
 pub fn poll_time(ms: u64) -> std::time::Duration {
-    std::time::Duration::from_millis(ms) / syncd::scheduler::Settings::quick().time_scale
+    std::time::Duration::from_millis(ms) / ferry_engine::scheduler::Settings::quick().time_scale
 }
 
 /// Polls `check` every 20 ms for up to [`test_kit::GENEROUS`] by the clock (not by counting
@@ -138,7 +138,7 @@ pub async fn eventually(what: &str, mut check: impl FnMut() -> bool) {
 /// of `hub` has begun and finished, plus the `requests` its fake server has served. A wait that
 /// reads it ([`eventually_alive`], [`until_alive`]) counts each change as progress, so a loaded
 /// machine that mirrors slowly is never cut short, and a daemon that stopped still is.
-pub fn pulse(hub: &syncd::service::Hub, requests: usize) -> u64 {
+pub fn pulse(hub: &ferry_engine::hub::Hub, requests: usize) -> u64 {
     let cycles: u64 = hub
         .names()
         .iter()

@@ -16,7 +16,7 @@
 //! group memberships. Types Google names freely (`"type": "custom"`, a label of the person's
 //! own) are left out rather than guessed.
 
-use super::super::graph::convert::{escape, fold};
+use ferry_pim_feed::text::{escape, fold};
 use serde::Deserialize;
 
 /// A contact the way `people.connections.list` gives it.

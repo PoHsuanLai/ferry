@@ -8,7 +8,7 @@
 
 use super::cas::{self, ContentId};
 use super::library::{PhotoLibrary, originals_dir};
-use crate::dataset::{Dataset, DatasetError, DatasetId};
+use ferry_engine::dataset::{Dataset, DatasetError, DatasetId};
 use ferry_sync::{Blob, ConflictRule, ContentHash, ItemPath, LocalId, Scanned};
 use porter_ids::Bytes;
 use std::io;
@@ -165,8 +165,8 @@ fn scanned(id: &ContentId, size: u64) -> Scanned {
 mod tests {
     use super::super::hlc::{DeviceId, ManualMillis};
     use super::*;
-    use crate::dataset::fingerprint;
     use crate::testing::scratch;
+    use ferry_engine::dataset::fingerprint;
     use std::sync::Arc;
 
     fn dataset(name: &str) -> (PhotoOriginals, PhotoLibrary, tempfile::TempDir) {

@@ -1,7 +1,7 @@
 //! A whole drive, listed: every file, folder and online document of a Storage account's drive
 //! (OneDrive's, or My Drive), kept by id in a journal of its own (`storage_drive`) for Files to
 //! show and, in S2, for the file system to serve. Only listed: no byte is downloaded here, and
-//! it does not go through the eager [`crate::engine::Engine`], which downloads every file whole.
+//! it does not go through the eager [`ferry_engine::engine::Engine`], which downloads every file whole.
 //!
 //! - [`DriveJournal`]: the entries (id, parent, name, kind, size, hash, version, modified), the
 //!   anchor and the replica's tree, one transaction per page; paths are built when read, so a
@@ -27,7 +27,8 @@ pub use files::{
 pub use journal::{Applied, DriveEntry, DriveJournal};
 pub use listing::{DriveReplica, Listed, Pass, keep_listing, keep_listing_told, list_once};
 
-use crate::paths::{AccountDir, Paths};
+use crate::paths::Paths;
+use ferry_engine::account::AccountDir;
 
 /// The dataset's slug: its journal is `storage_drive.sqlite` beside the account's others.
 pub const DRIVE_DATASET: &str = "storage_drive";

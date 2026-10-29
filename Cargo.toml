@@ -2,6 +2,10 @@
 resolver = "3"
 members = [
   "crates/ferry-sync",
+  "crates/ferry-engine",
+  "crates/ferry-vdir",
+  "crates/ferry-pim-feed",
+  "crates/ferry-pim-mirror",
   "crates/ferry-bus",
   "crates/ferry-drive",
   "crates/ferry-drive-fuse",
@@ -28,6 +32,10 @@ publish = false
 
 [workspace.dependencies]
 ferry-sync      = { path = "crates/ferry-sync" }
+ferry-engine    = { path = "crates/ferry-engine" }
+ferry-vdir      = { path = "crates/ferry-vdir" }
+ferry-pim-feed  = { path = "crates/ferry-pim-feed" }
+ferry-pim-mirror = { path = "crates/ferry-pim-mirror" }
 ferry-bus       = { path = "crates/ferry-bus" }
 ferry-drive     = { path = "crates/ferry-drive" }
 ferry-drive-fuse = { path = "crates/ferry-drive-fuse" }

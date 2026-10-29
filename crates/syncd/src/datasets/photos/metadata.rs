@@ -10,7 +10,7 @@ use super::cas;
 use super::hlc::DeviceId;
 use super::library::{PhotoLibrary, manifest_dir};
 use super::originals::blocking;
-use crate::dataset::{Dataset, DatasetError, DatasetId, fingerprint};
+use ferry_engine::dataset::{Dataset, DatasetError, DatasetId, fingerprint};
 use ferry_sync::{Blob, ConflictRule, ItemPath, LocalId, Scanned};
 use porter_ids::Bytes;
 use std::io;

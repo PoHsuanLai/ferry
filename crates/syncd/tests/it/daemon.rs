@@ -6,11 +6,11 @@
 use crate::common::bus::PrivateBus;
 
 use ferry_bus::SYNC_BUS;
+use ferry_engine::scheduler::Network;
 use porter_dbus::BusTarget;
 use std::path::Path;
 use std::time::Duration;
 use syncd::paths::Paths;
-use syncd::scheduler::Network;
 use syncd::{Config, Daemon};
 use test_kit::{Deadline, GENEROUS};
 

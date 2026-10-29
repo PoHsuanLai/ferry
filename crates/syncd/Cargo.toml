@@ -12,7 +12,12 @@ publish.workspace = true
 ferry-bus = { workspace = true }
 ferry-drive = { workspace = true }
 ferry-drive-fuse = { workspace = true }
+# The engine, the PIM mirror and the vdir: libraries syncd runs its datasets with.
+ferry-engine = { workspace = true }
+ferry-pim-feed = { workspace = true }
+ferry-pim-mirror = { workspace = true }
 ferry-sync = { workspace = true }
+ferry-vdir = { workspace = true }
 storage-gdrive = { workspace = true }
 storage-graph = { workspace = true }
 storage-webdav = { workspace = true }
@@ -34,7 +39,6 @@ porter-capability = { workspace = true }
 porter-wire = { workspace = true }
 porter-ids = { workspace = true }
 porter-fs = { workspace = true }
-dav-proto = { workspace = true, features = ["discover"] }
 porter-http = { workspace = true }
 porter-http-relay = { workspace = true }
 ds-settings = { workspace = true }
@@ -56,7 +60,7 @@ zbus = { workspace = true }
 [dev-dependencies]
 test-kit = { workspace = true }
 ds-settings = { workspace = true, features = ["testing"] }
-syncd = { path = ".", features = ["testing"] }
+ferry-engine = { workspace = true, features = ["testing"] }
 base64 = { workspace = true }
 tempfile = { workspace = true }
 ferry-fake-graph = { workspace = true }
@@ -88,8 +92,6 @@ workspace = true
 # variables. A test in tests/dist.rs fails if this feature is ever default, and
 # check-boundary.sh checks it too.
 test-proc-root = ["porter-callers/test-proc-root"]
-# `MemoryDataset`, the in-memory local side the engine's tests (and daemon tests) drive.
-testing = []
 # Serves `org.quire.Photos1.Picker` beside Sync1 (ferry-bus's feature of the same name declares
 # it). Off by default: no Photos app ships in v1.
 photos-picker = ["ferry-bus/photos-picker"]

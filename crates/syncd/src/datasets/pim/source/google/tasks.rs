@@ -6,18 +6,19 @@
 //! ask for hidden (completed and cleared) ones. Tasks are converted to `VTODO`s by
 //! [`super::task`] and arrive with their bytes.
 
-use super::super::graph::encode;
-use super::super::{Feed, FeedChange, Page, PimSource};
+use super::TaskCursor;
 use super::task::{self, Task, TaskList};
-use super::{Api, TaskCursor, id_in, list_all, read_error, segment_of};
-use crate::dataset::fingerprint;
-use crate::datasets::pim::PimKind;
-use crate::datasets::pim::discover::{DiscoverError, Found};
+use ferry_engine::dataset::fingerprint;
+use ferry_pim_feed::google::{id_in, read_error, segment_of};
+use ferry_pim_feed::wire::encode;
+use ferry_pim_feed::{DiscoverError, Feed, FeedChange, Found, Page, PimSource};
+use ferry_pim_mirror::google::{Api, list_all};
 use ferry_sync::{Clock, DELETED};
 use ferry_sync::{
     ItemKind, ItemPath, More, RemoteId, RemoteItem, RemoteVersion, ReplicaError, RetryAfter,
     Tombstone,
 };
+use ferry_vdir::PimKind;
 use porter_client::{Grants, GrantsLink};
 use porter_core::EndpointUrl;
 use porter_core::GrantId;

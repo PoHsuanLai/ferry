@@ -6,6 +6,7 @@
 //! accounts, no real keyring.
 #![allow(dead_code)]
 
+use ferry_engine::hub::Hub;
 use porter_client::{Grants, Porter};
 use porter_client_inproc::{Hosted as HostedLink, PorterRelays};
 use porter_core::consent::{ConsentAnswer, ConsentAsk, GrantScope};
@@ -20,7 +21,6 @@ use std::sync::Arc;
 use std::sync::atomic::{AtomicUsize, Ordering};
 use syncd::keep::{Keep, sync_app};
 use syncd::paths::Paths;
-use syncd::service::Hub;
 
 /// The person at accountd's sheet host: every consent ask is allowed, for the first account it
 /// offers, for good, and the asks are counted; the conversations (a sign-in) are `inner`'s.

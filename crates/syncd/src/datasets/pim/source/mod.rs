@@ -1,137 +1,21 @@
-//! The source seam: where a collection's items come from.
+//! Where syncd's collections come from: the sources there are and the choice among them.
 //!
-//! Everything downstream of a source is shared: the vdir writer ([`super::PimMirror`]), the
-//! journal, the `PullOnly` rule, the rescan and the supervisor. A source has two jobs and two
-//! traits:
-//!
-//! - [`PimSource`], per account and kind: the collections there are (id, display name, colour,
-//!   as a [`Found`]) and a [`Feed`] for each.
-//! - [`Feed`], per collection: the changes since a cursor, as upserts that carry the item's
-//!   bytes (`.ics` for a VEVENT or a VTODO, `.vcf` for a vCard) and deletes. The cursor type is
-//!   the source's own ([`FeedCursor`]: a sync token, a delta link, a page token); the journal
-//!   stores it as the opaque anchor text.
-//!
-//! [`FeedReplica`] makes any feed a ferry-sync `Replica` for the engine, which is why nothing
-//! else in syncd changed. The source is chosen by the capability's transport
-//! ([`choose`]: `caldav` and `carddav` are [`dav`], `graph` is [`graph`], `google_api` is
-//! [`google`], one source per kind), never by provider.
+//! The seam (`PimSource`, `Feed`) is `ferry-pim-feed`'s and the CalDAV/CardDAV source is
+//! `ferry-pim-mirror`'s. The source is chosen by the capability's transport ([`choose`]:
+//! `caldav` and `carddav` are DAV, `graph` is [`graph`], `google_api` is [`google`], one source
+//! per kind), never by provider.
 //!
 //! **A new source is one module**: a `PimSource` and a `Feed`, one more arm in [`choose`], one
-//! more arm in `AccountMirrors::refresh`. Nothing else is touched.
+//! more arm in `SyncdSources::refresh`. Nothing else is touched.
 
-mod adapter;
 mod civil;
-pub mod dav;
 pub mod google;
 pub mod graph;
 
-pub use adapter::FeedReplica;
-pub use dav::{DavFeed, DavSource};
-pub use google::{GoogleCalendarSource, GooglePeopleSource, GoogleTasksSource};
-pub use graph::{GraphCalendarFeed, GraphCalendarSource};
-
-use super::PimKind;
-use super::discover::{DiscoverError, Found};
-use ferry_sync::{More, RemoteItem, ReplicaError, Tombstone};
-use porter_capability::{Capability, PimTransport};
-use porter_core::{Candidate, ServiceEndpoint};
-use std::future::Future;
-
-/// A position in a collection's change feed, in the source's own type.
-pub trait FeedCursor: Sized + Send + Sync {
-    /// The text the journal keeps as the anchor.
-    fn encode(&self) -> String;
-    /// The cursor the text stands for; `None` when it is not one of this source's (the feed is
-    /// then read again from the start).
-    fn decode(text: &str) -> Option<Self>;
-}
-
-/// One change of a collection.
-#[derive(Debug, Clone, PartialEq, Eq)]
-pub enum FeedChange {
-    /// Created or changed. `content` is the item's bytes when the source already holds them
-    /// (Graph's delta carries whole events); `None` when they are fetched afterwards (CalDAV's
-    /// sync-collection reports names and etags only).
-    Upsert {
-        /// The item as the journal records it: id, version, name, size, hash.
-        item: RemoteItem,
-        /// Its iCalendar or vCard bytes, when known.
-        content: Option<Vec<u8>>,
-    },
-    /// Deleted.
-    Delete(Tombstone),
-}
-
-/// One page of a feed.
-#[derive(Debug, Clone, PartialEq, Eq)]
-pub struct Page<C> {
-    /// The changes, oldest first.
-    pub changes: Vec<FeedChange>,
-    /// Where the next read starts; stored once the page is applied.
-    pub next: C,
-    /// Whether more pages follow.
-    pub more: More,
-}
-
-/// The changes of one collection.
-pub trait Feed: Send + Sync + 'static {
-    /// The source's cursor type.
-    type Cursor: FeedCursor;
-
-    /// Changes after `from`; `None` is the start: everything there is, without deletes. A cursor
-    /// the source no longer honours is `ReplicaError::AnchorExpired`.
-    fn changes(
-        &self,
-        from: Option<Self::Cursor>,
-    ) -> impl Future<Output = Result<Page<Self::Cursor>, ReplicaError>> + Send;
-
-    /// An item's bytes, for an upsert that came without them.
-    fn fetch(
-        &self,
-        id: &ferry_sync::RemoteId,
-    ) -> impl Future<Output = Result<Vec<u8>, ReplicaError>> + Send;
-
-    /// What the backend offers; the default is a read-only feed whose items the engine compares
-    /// by SHA-256.
-    fn features(&self) -> porter_capability::StorageCap {
-        use porter_capability::{Access, Delta, HashKind, StorageCap, StorageScope};
-        StorageCap {
-            access: Access::Read,
-            delta: Delta::Poll,
-            quota: false,
-            scope: StorageScope::Full,
-            hashes: HashKind::Sha256,
-            ranges: false,
-            chunked_upload: false,
-        }
-    }
-
-    /// The quota, when `features` says it is reported.
-    fn quota(&self) -> impl Future<Output = Result<ferry_sync::Quota, ReplicaError>> + Send {
-        async {
-            Ok(ferry_sync::Quota {
-                used: porter_ids::Bytes(0),
-                total: None,
-            })
-        }
-    }
-}
-
-/// The collections of an account's kind and the feed of each.
-pub trait PimSource: Send + Sync + 'static {
-    /// Its feeds.
-    type Feed: Feed;
-
-    /// The collections there are now: a name for the directory (`Found::segment`, stable for the
-    /// collection), the URL that identifies it, its display name and colour.
-    fn collections(
-        &self,
-        kind: PimKind,
-    ) -> impl Future<Output = Result<Vec<Found>, DiscoverError>> + Send;
-
-    /// The feed of one of those collections.
-    fn feed(&self, found: &Found) -> Self::Feed;
-}
+use ferry_pim_feed::{NoSource, transport_of};
+use ferry_vdir::PimKind;
+use porter_capability::PimTransport;
+use porter_core::Candidate;
 
 /// Which source an account's grant for a kind is read through.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -148,35 +32,9 @@ pub enum Chosen {
     GoogleTasks,
 }
 
-/// Why no source reads a grant.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, thiserror::Error)]
-#[error("no source reads {kind:?} over {transport:?} yet")]
-pub struct NoSource {
-    /// The kind.
-    pub kind: PimKind,
-    /// The capability's transport.
-    pub transport: PimTransport,
-}
-
-/// The capability's transport for `kind`.
-fn transport_of(kind: PimKind, candidate: &Candidate) -> Option<PimTransport> {
-    match (kind, &candidate.capability) {
-        (PimKind::Calendar, Capability::Calendar(cap))
-        | (PimKind::Contacts, Capability::Contacts(cap))
-        | (PimKind::Tasks, Capability::Tasks(cap)) => Some(cap.transport),
-        _ => None,
-    }
-}
-
 /// The source for the account's capability: by its transport, never by provider name.
 pub fn choose(kind: PimKind, candidate: &Candidate) -> Result<Chosen, NoSource> {
-    // A candidate whose capability is not the kind's (or an older bus peer) is the kind's
-    // protocol family, which is what the mirror did before sources existed.
-    let transport = transport_of(kind, candidate).unwrap_or(match kind {
-        PimKind::Calendar => PimTransport::CalDav,
-        PimKind::Contacts => PimTransport::CardDav,
-        PimKind::Tasks => PimTransport::CalDav,
-    });
+    let transport = transport_of(kind, candidate);
     match (kind, transport) {
         // A task list over CalDAV is a calendar of `VTODO`s: the CalDAV account's calendars
         // already mirror it as one, so a second mirror of the same collection is not made.
@@ -188,18 +46,6 @@ pub fn choose(kind: PimKind, candidate: &Candidate) -> Result<Chosen, NoSource> 
         (PimKind::Tasks, PimTransport::GoogleApi) => Ok(Chosen::GoogleTasks),
         (kind, transport) => Err(NoSource { kind, transport }),
     }
-}
-
-/// The account's server of `family`, else its first.
-pub(crate) fn endpoint_of(
-    candidate: &Candidate,
-    family: porter_core::Family,
-) -> Option<&ServiceEndpoint> {
-    candidate
-        .endpoints
-        .iter()
-        .find(|e| e.family == family)
-        .or_else(|| candidate.endpoints.first())
 }
 
 #[cfg(test)]

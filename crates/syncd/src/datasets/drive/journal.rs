@@ -4,7 +4,7 @@
 //! built when it is read, so a folder renamed or moved re-paths everything inside it without
 //! one more row written.
 
-use crate::journal::{JournalError, migrate};
+use ferry_engine::journal::{JournalError, migrate};
 use ferry_sync::{
     Anchor, Change, ChangePage, ContentHash, Cursor, Folders, ItemKind, ItemPath, More, RemoteId,
     RemoteItem, RemoteVersion,

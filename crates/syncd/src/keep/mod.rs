@@ -29,9 +29,10 @@ pub use classes::{
 };
 
 use crate::datasets::drive::{DriveSet, Kept};
-use crate::paths::{AccountDir, Paths};
+use crate::paths::Paths;
 use crate::removal;
-use crate::service::Hub;
+use ferry_engine::account::AccountDir;
+use ferry_engine::hub::Hub;
 use porter_capability::{CapabilityKind, Toggle};
 use porter_client::{
     Accounts, AccountsError, AccountsLink, ConsentOffer, Grants, GrantsError, GrantsLink,

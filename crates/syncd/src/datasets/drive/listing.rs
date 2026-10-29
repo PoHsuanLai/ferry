@@ -4,7 +4,7 @@
 //! drive; that is S2's, on demand.
 
 use super::journal::DriveJournal;
-use crate::journal::JournalError;
+use ferry_engine::journal::JournalError;
 use ferry_sync::{Cursor, Folders, More, Replica, ReplicaError, RetryAfter};
 use porter_http::Http;
 use std::sync::Arc;

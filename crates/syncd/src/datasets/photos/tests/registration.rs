@@ -1,11 +1,12 @@
 //! The registration seam and the `AccountRemoved` wipe.
 
 use super::super::{DeviceId, ManualMillis, PhotoLibrary, PhotosWiring, start};
-use crate::paths::{AccountDir, Paths};
+use crate::paths::Paths;
 use crate::removal::wipe;
-use crate::scheduler::{Network, Settings};
-use crate::service::{Access, DatasetName, Hub};
 use crate::testing::scratch;
+use ferry_engine::account::AccountDir;
+use ferry_engine::hub::{Access, DatasetName, Hub};
+use ferry_engine::scheduler::{Network, Settings};
 use ferry_sync::MemoryReplica;
 use porter_callers::{Caller, CallerRole};
 use porter_capability::{Access as Rights, Delta, HashKind, StorageCap, StorageScope};

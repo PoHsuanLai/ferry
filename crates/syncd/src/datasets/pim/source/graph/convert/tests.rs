@@ -252,8 +252,7 @@ fn a_long_line_is_folded_inside_75_octets_and_never_inside_a_character() {
 }
 
 #[test]
-fn the_text_helpers_escape_and_strip() {
-    assert_eq!(escape("a\\b;c,d\r\ne\nf"), "a\\\\b\\;c\\,d\\ne\\nf");
+fn the_text_helper_strips_markup() {
     assert_eq!(
         html_text("<div>one</div><div>two&nbsp;&lt;3</div>"),
         "one\n\ntwo <3"

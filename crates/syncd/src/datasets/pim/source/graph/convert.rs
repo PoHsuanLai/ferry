@@ -25,6 +25,7 @@ use super::super::civil::{compact_date, compact_local};
 use super::json::{Address, Attendee, Event, When};
 use super::recur::{Rule, rule};
 use super::zones::{Zone, zone};
+use ferry_pim_feed::text::{escape, fold};
 
 /// Why an event could not be written.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, thiserror::Error)]
@@ -38,44 +39,6 @@ pub enum ConvertError {
     /// A date-time that is not `YYYY-MM-DDTHH:MM:SS`.
     #[error("a date-time could not be read")]
     BadDateTime,
-}
-
-const CRLF: &str = "\r\n";
-
-/// A `TEXT` value: backslash, semicolon, comma and newlines escaped.
-pub fn escape(text: &str) -> String {
-    let mut out = String::with_capacity(text.len());
-    for c in text.chars() {
-        match c {
-            '\\' => out.push_str("\\\\"),
-            ';' => out.push_str("\\;"),
-            ',' => out.push_str("\\,"),
-            '\r' => {}
-            '\n' => out.push_str("\\n"),
-            c => out.push(c),
-        }
-    }
-    out
-}
-
-/// A content line folded at 75 octets, never inside a character, and ended with CRLF.
-pub fn fold(line: &str) -> String {
-    let mut out = String::with_capacity(line.len() + 8);
-    let mut width = 0;
-    let mut limit = 75;
-    for c in line.chars() {
-        let n = c.len_utf8();
-        if width + n > limit && width > 0 {
-            out.push_str(CRLF);
-            out.push(' ');
-            width = 0;
-            limit = 74;
-        }
-        out.push(c);
-        width += n;
-    }
-    out.push_str(CRLF);
-    out
 }
 
 /// A parameter value, quoted when it holds a character that would end it.

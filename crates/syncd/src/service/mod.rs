@@ -38,21 +38,15 @@
 //!   broadcast; a connection that leaves the bus is forgotten.
 
 mod errors;
-mod hub;
 mod object;
 mod picker;
-mod resolve;
 mod status;
 mod storage;
 
 pub use errors::RefusedError;
-pub use hub::{Access, Cycles, DatasetName, Event, Handle, Hub, Nudge, StatusSnapshot};
 pub use object::serve;
 #[cfg(feature = "photos-picker")]
 pub use picker::serve_picker;
 pub use picker::{PickerDesk, Pickers};
-pub use resolve::{
-    Confirm, ConfirmError, ConflictNumber, How, Settle, SettleError, SyncNowError, UnknownHow,
-};
 pub use status::{conflict_details, held_details, progress_details, status_details};
 pub use storage::{FilesApps, ITEMS_EVERY, absolute, drive_details, item_details, serve_storage};

@@ -8,9 +8,10 @@ use crate::common;
 use common::Known;
 use common::bus::PrivateBus;
 use ferry_bus::SYNC_BUS;
+use ferry_engine::hub::Hub;
 use porter_fake_servers::HeldRuntime;
 use std::time::Duration;
-use syncd::service::{Hub, serve};
+use syncd::service::serve;
 
 /// How long the start may show it is waiting for the held runtime, and how long a call has to
 /// leave before the runtime runs (see `HeldRuntime`).

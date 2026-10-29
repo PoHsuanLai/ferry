@@ -2,7 +2,7 @@
 
 use super::rig::{Machine, Server};
 use crate::datasets::photos::{ContentId, Edit, Mark, Stored};
-use crate::engine::Outcome;
+use ferry_engine::engine::Outcome;
 use std::collections::BTreeSet;
 use std::time::Instant;
 

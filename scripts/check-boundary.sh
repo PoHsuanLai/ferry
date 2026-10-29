@@ -22,10 +22,18 @@ cd "$(dirname "$0")/.."
 EFFECTS="zbus zvariant tokio reqwest hyper ureq oo7 keyring secret-service interprocess latchkey ds-settings"
 NO_BUS="zbus zvariant reqwest hyper ureq oo7 keyring secret-service interprocess latchkey ds-settings"
 PORTER_HIDDEN="porter-dbus porter-callers porter-service porter-service-core porter-service-accounts porter-secrets porter-store porter-sheets porter-client porter-client-dbus porter-client-inproc"
+# The engine judges who sees a dataset by porter-callers' `Caller` (which brings zbus along), and the
+# PIM mirror asks accountd through porter-client; neither names the bus transport, the account
+# service, a secret store or a sheet.
+LIBRARY_HIDDEN="reqwest hyper ureq oo7 keyring secret-service interprocess latchkey ds-settings porter-dbus porter-service porter-service-core porter-service-accounts porter-secrets porter-store porter-sheets porter-client-dbus porter-client-inproc"
 RULES=(
   "quickxorhash: $EFFECTS"
   "windows-zones: $EFFECTS"
   "ferry-sync: $EFFECTS $PORTER_HIDDEN"
+  "ferry-vdir: $EFFECTS $PORTER_HIDDEN"
+  "ferry-pim-feed: $EFFECTS $PORTER_HIDDEN"
+  "ferry-engine: $LIBRARY_HIDDEN porter-client"
+  "ferry-pim-mirror: $LIBRARY_HIDDEN"
   "storage-webdav: $EFFECTS $PORTER_HIDDEN"
   "storage-graph: $EFFECTS $PORTER_HIDDEN"
   "storage-gdrive: $EFFECTS $PORTER_HIDDEN"
@@ -124,6 +132,10 @@ EDGES=(
   "quickxorhash:"
   "windows-zones:"
   "ferry-sync: porter-capability porter-ids porter-http"
+  "ferry-vdir: porter-core porter-fs"
+  "ferry-pim-feed: ferry-sync ferry-vdir porter-capability porter-core porter-http porter-ids"
+  "ferry-engine: ferry-sync porter-callers porter-capability porter-core porter-ids"
+  "ferry-pim-mirror: dav-proto ferry-engine ferry-pim-feed ferry-sync ferry-vdir porter-capability porter-client porter-core porter-http porter-http-relay porter-ids porter-match storage-webdav"
   "storage-webdav: dav-proto porter-capability porter-ids porter-http ferry-sync"
   "storage-graph: porter-capability porter-ids porter-http ferry-sync"
   "storage-gdrive: porter-capability porter-ids porter-http ferry-sync"
@@ -134,7 +146,7 @@ EDGES=(
   "ferry-fake-graph: porter-core porter-fake porter-fake-servers porter-ids porter-provider quickxorhash"
   "ferry-rig: ferry-bus ferry-fake-graph porter-dbus porter-fake-servers porter-rig"
   "syncd-fakes: ferry-bus porter-dbus"
-  "syncd: ds-settings dav-proto porter-client porter-client-dbus porter-core porter-match porter-capability porter-wire porter-ids porter-daemon porter-callers porter-dbus porter-fs porter-http porter-http-relay ferry-bus ferry-drive ferry-drive-fuse ferry-sync storage-gdrive storage-graph storage-webdav windows-zones"
+  "syncd: ds-settings ferry-engine ferry-pim-feed ferry-pim-mirror ferry-vdir porter-client porter-client-dbus porter-core porter-match porter-capability porter-wire porter-ids porter-daemon porter-callers porter-dbus porter-fs porter-http porter-http-relay ferry-bus ferry-drive ferry-drive-fuse ferry-sync storage-gdrive storage-graph storage-webdav windows-zones"
 )
 for edge in "${EDGES[@]}"; do
   crate="${edge%%:*}"

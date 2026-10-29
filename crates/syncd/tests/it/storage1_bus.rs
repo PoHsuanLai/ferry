@@ -15,6 +15,7 @@ use ferry_bus::{
 use ferry_bus::{STORAGE_PATH, SYNC_BUS};
 use ferry_drive::testing::{MemoryListing, MemorySink, MemorySource, Took};
 use ferry_drive::{Drive, DriveConfig, NodeId, Reason};
+use ferry_engine::hub::{Access, Hub};
 use porter_callers::CallerRole;
 use porter_core::AppName;
 use std::collections::BTreeSet;
@@ -22,7 +23,7 @@ use std::pin::Pin;
 use std::sync::Arc;
 use std::time::Duration;
 use syncd::datasets::drive::{DriveSet, LiveDrive};
-use syncd::service::{Access, Hub, serve, serve_storage};
+use syncd::service::{serve, serve_storage};
 use syncd::words;
 use zbus::export::futures_core::Stream;
 use zbus::zvariant::OwnedValue;

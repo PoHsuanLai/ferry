@@ -3,10 +3,11 @@
 //! by its object-path segment (`porter_ids::object_segment`), the form the account's
 //! directories are named in, so a wipe needs no map back to the id.
 
+use ferry_engine::account::AccountDir;
+use ferry_engine::rescan::Build;
 pub use porter_daemon::xdg::PathError;
 use porter_daemon::xdg::Xdg;
 use std::path::PathBuf;
-use std::time::Duration;
 
 /// Every path the daemon uses.
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -53,9 +54,7 @@ impl Paths {
 
     /// The journal file of one dataset of one account.
     pub fn journal(&self, account: &AccountDir, dataset: &str) -> PathBuf {
-        self.journals
-            .join(account.as_str())
-            .join(format!("{dataset}.sqlite"))
+        ferry_engine::journal::path(&self.journals, account, dataset)
     }
 
     /// The Photos library of one account, `$XDG_DATA_HOME/porter/photos/<account>` (W6f): beside
@@ -113,42 +112,6 @@ impl Paths {
     }
 }
 
-/// An account as a directory name: the `[A-Za-z0-9_]+` segment of its object path.
-#[derive(Debug, Clone, PartialEq, Eq, Hash, PartialOrd, Ord)]
-pub struct AccountDir(String);
-
-impl AccountDir {
-    /// The segment, if it is one: nothing else may become a path component.
-    pub fn parse(segment: &str) -> Option<Self> {
-        let ok = !segment.is_empty()
-            && segment.len() <= 64
-            && segment
-                .bytes()
-                .all(|b| b.is_ascii_alphanumeric() || b == b'_');
-        ok.then(|| Self(segment.to_owned()))
-    }
-
-    /// The directory name.
-    pub fn as_str(&self) -> &str {
-        &self.0
-    }
-}
-
-impl std::fmt::Display for AccountDir {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        f.write_str(&self.0)
-    }
-}
-
-/// Which build this is, for the one knob a release must not have.
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum Build {
-    /// Built with the `test-proc-root` feature.
-    Test,
-    /// Every other build: the shipped one.
-    Release,
-}
-
 /// The build this binary is.
 pub const BUILD: Build = if cfg!(feature = "test-proc-root") {
     Build::Test
@@ -160,46 +123,10 @@ pub const BUILD: Build = if cfg!(feature = "test-proc-root") {
 /// release build ignores the variable.
 pub const HONOURS_PROC_ROOT: bool = cfg!(feature = "test-proc-root");
 
-/// How often the supervisors read grants again (`SYNCD_RESCAN_S`, whole seconds, at least 1),
-/// for a test build only, so a scenario need not wait the default ten minutes for a grant it
-/// just made. A release build ignores the variable; so does a value that is not a number of
-/// seconds. The default is `default`, and no build has a shorter one.
-pub fn rescan(build: Build, value: Option<String>, default: Duration) -> Duration {
-    match build {
-        Build::Test => value
-            .and_then(|v| v.trim().parse::<u64>().ok())
-            .filter(|seconds| *seconds >= 1)
-            .map_or(default, Duration::from_secs),
-        Build::Release => default,
-    }
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
     use std::path::Path;
-
-    #[test]
-    fn the_rescan_variable_is_read_by_a_test_build_only_and_never_shortens_the_default() {
-        let default = Duration::from_secs(600);
-        let cases = [
-            (Build::Test, Some("2"), Duration::from_secs(2)),
-            (Build::Test, Some(" 5 "), Duration::from_secs(5)),
-            (Build::Test, Some("0"), default),
-            (Build::Test, Some("soon"), default),
-            (Build::Test, Some("-3"), default),
-            (Build::Test, None, default),
-            (Build::Release, Some("2"), default),
-            (Build::Release, None, default),
-        ];
-        for (build, value, want) in cases {
-            assert_eq!(
-                rescan(build, value.map(str::to_owned), default),
-                want,
-                "{build:?} {value:?}"
-            );
-        }
-    }
 
     fn env<'a>(pairs: &'a [(&'a str, &'a str)]) -> impl Fn(&str) -> Option<String> + 'a {
         move |name| {
@@ -270,21 +197,6 @@ mod tests {
             mirrors,
             Path::new("/h/.local/share/porter/vdir/67e55044_10b1")
         );
-    }
-
-    #[test]
-    fn only_a_plain_segment_becomes_a_directory_name() {
-        const CASES: &[(&str, bool)] = &[
-            ("abc_123", true),
-            ("", false),
-            ("..", false),
-            ("a/b", false),
-            ("a-b", false),
-            ("a.b", false),
-        ];
-        for (text, ok) in CASES {
-            assert_eq!(AccountDir::parse(text).is_some(), *ok, "{text:?}");
-        }
     }
 
     #[test]

@@ -12,6 +12,13 @@ use common::hosted::{Link, host};
 use common::{Known, client};
 use ferry_bus::STATUS_KEY_QUOTA;
 use ferry_bus::SyncProxy;
+use ferry_engine::clock::Wall;
+use ferry_engine::dataset::MemoryDataset;
+use ferry_engine::driver::Driver;
+use ferry_engine::engine::Engine;
+use ferry_engine::hub::{Access as Visible, DatasetName, Hub};
+use ferry_engine::journal::Journal;
+use ferry_engine::scheduler::{Network, Settings};
 use ferry_sync::Clock;
 use ferry_sync::ConflictRule;
 use porter_callers::CallerRole;
@@ -34,14 +41,8 @@ use porter_secrets::{MemorySecrets, Secrets};
 use porter_service_core::registry::Registry;
 use std::collections::BTreeSet;
 use std::sync::Arc;
-use syncd::clock::Wall;
-use syncd::dataset::MemoryDataset;
-use syncd::driver::Driver;
-use syncd::engine::Engine;
-use syncd::journal::Journal;
 use syncd::keep::sync_app;
-use syncd::scheduler::{Network, Settings};
-use syncd::service::{Access as Visible, DatasetName, Hub, serve};
+use syncd::service::serve;
 use syncd::webdav::webdav_replica;
 use tokio::sync::{Notify, watch};
 use zbus::zvariant::OwnedValue;
@@ -261,6 +262,6 @@ async fn a_folder_syncs_against_nextcloud_through_the_relay_and_status_shows_the
     assert_eq!(dataset.snapshot().len(), 3);
 
     rig.hub
-        .forget_account(&syncd::paths::AccountDir::parse("a1").expect("account"));
+        .forget_account(&ferry_engine::account::AccountDir::parse("a1").expect("account"));
     eventually(&rig, "the driver stops", || running.is_finished()).await;
 }

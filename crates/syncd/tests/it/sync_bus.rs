@@ -8,6 +8,13 @@ use common::bus::PrivateBus;
 use common::{ACCESS_DENIED, INVALID_ARGS, Known, NO_FITTING, client, error_name, eventually};
 use ferry_bus::SyncProxy;
 use ferry_bus::{STATUS_KEY_QUOTA, SYNC_BUS, SYNC_ERROR_PAUSED, SYNC_PATH};
+use ferry_engine::clock::Wall;
+use ferry_engine::dataset::MemoryDataset;
+use ferry_engine::driver::Driver;
+use ferry_engine::engine::Engine;
+use ferry_engine::hub::{Access as Visible, DatasetName, Event, Hub, StatusSnapshot};
+use ferry_engine::journal::Journal;
+use ferry_engine::scheduler::{Network, Settings};
 use ferry_sync::{
     BaseVersion, Conflict, ConflictRule, LocalId, MemoryReplica, Quota, RemoteId, RemoteSide,
     RemoteVersion, StoredConflict,
@@ -19,13 +26,7 @@ use std::collections::BTreeSet;
 use std::pin::Pin;
 use std::sync::Arc;
 use std::time::Duration;
-use syncd::clock::Wall;
-use syncd::dataset::MemoryDataset;
-use syncd::driver::Driver;
-use syncd::engine::Engine;
-use syncd::journal::Journal;
-use syncd::scheduler::{Network, Settings};
-use syncd::service::{Access as Visible, DatasetName, Event, Hub, StatusSnapshot, serve};
+use syncd::service::serve;
 use tokio::sync::{Notify, watch};
 use zbus::export::futures_core::Stream;
 use zbus::zvariant::OwnedValue;
@@ -241,7 +242,7 @@ async fn a_caller_sees_what_it_owns_settings_sees_all_and_status_carries_quota_a
             .expect_err("paused");
         assert_eq!(error_name(&err), SYNC_ERROR_PAUSED);
     }
-    assert_eq!(photos.pausing(), syncd::scheduler::Pausing::Paused);
+    assert_eq!(photos.pausing(), ferry_engine::scheduler::Pausing::Paused);
     let status = proxy(&settings)
         .await
         .status("a1/photos_originals")
@@ -253,7 +254,7 @@ async fn a_caller_sees_what_it_owns_settings_sees_all_and_status_carries_quota_a
         .resume("a1/photos_originals")
         .await
         .expect("resume");
-    assert_eq!(photos.pausing(), syncd::scheduler::Pausing::Running);
+    assert_eq!(photos.pausing(), ferry_engine::scheduler::Pausing::Running);
 }
 
 async fn next<S: Stream + Unpin>(stream: &mut S) -> S::Item {
@@ -435,6 +436,6 @@ async fn a_running_engine_syncs_to_its_replica_and_the_bus_shows_it_until_it_is_
 
     // Removing the account's datasets from the hub ends the driver.
     rig.hub
-        .forget_account(&syncd::paths::AccountDir::parse("a1").expect("account"));
+        .forget_account(&ferry_engine::account::AccountDir::parse("a1").expect("account"));
     eventually("the driver stops", || running.is_finished()).await;
 }

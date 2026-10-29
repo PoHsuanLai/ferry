@@ -12,6 +12,10 @@ use porter_ids::word::word as word_of;
 use common::bus::PrivateBus;
 use common::caller as caller_of;
 use common::hosted::host;
+use ferry_engine::hub::{Access, Hub};
+use ferry_engine::scheduler::{Network, Settings};
+use ferry_pim_mirror::{ClientGrants, PimConfig, PimSupervisor, Wiring};
+use ferry_vdir::{COLOR, DISPLAYNAME, PimKind, is_complete, items_in};
 use porter_callers::CallerRole;
 use porter_capability::StorageScope;
 use porter_capability::{CapabilityKind, Claim, Offer, Provenance, Subject};
@@ -34,14 +38,9 @@ use serde_json::{Value, json};
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
 use std::time::Duration;
-use syncd::datasets::pim::{
-    COLOR, ClientGrants, DISPLAYNAME, PimConfig, PimKind, PimSupervisor, Wiring, is_complete,
-    items_in,
-};
+use syncd::datasets::pim::SyncdSources;
 use syncd::keep::sync_app as syncd_app;
 use syncd::paths::Paths;
-use syncd::scheduler::{Network, Settings};
-use syncd::service::{Access, Hub};
 use tokio::sync::watch;
 
 const ACCOUNT: &str = "g-pim";
@@ -266,17 +265,18 @@ async fn rig(kinds: &[PimKind]) -> Rig {
     let wiring = Wiring {
         accounts: Arc::clone(&accounts),
         hub: hub.clone(),
-        paths: paths.clone(),
+        journals: paths.journals.clone(),
+        mirrors: paths.mirrors.clone(),
         settings: Settings::quick(),
         network,
         owners: Access::default(),
         clock: ferry_sync::Clock::new(porter_ids::clock::SystemClock),
         nonce: "t1".to_owned(),
-        millis: Arc::new(syncd::datasets::photos::ManualMillis::at(1_700_000_000_000)),
     };
     let supervisor = PimSupervisor::new(
         wiring,
         ClientGrants::new(Arc::clone(&accounts)),
+        SyncdSources,
         PimConfig {
             rescan: Duration::from_millis(300),
         },

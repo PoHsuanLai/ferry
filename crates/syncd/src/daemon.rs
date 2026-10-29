@@ -12,16 +12,18 @@
 //! receiver that says "unmetered and up" for good.
 
 use crate::datasets::photos::Millis;
-use crate::datasets::pim::{ClientGrants, PimConfig, PimSupervisor, Wiring};
+use crate::datasets::pim::SyncdSources;
 use crate::datasets::storage::DriveMount;
-use crate::datasets::storage::{ClientStorageGrants, StorageConfig, StorageSupervisor};
+use crate::datasets::storage::{ClientStorageGrants, StorageConfig, StorageSupervisor, Wiring};
 use crate::keep::Keep;
-use crate::paths::{BUILD, HONOURS_PROC_ROOT, Paths, rescan};
-use crate::scheduler::{Network, Settings};
+use crate::paths::{BUILD, HONOURS_PROC_ROOT, Paths};
 use crate::service;
-use crate::service::{Access, Hub};
 use crate::settings::{SyncSettings, read_cache_limit, serve_settings};
 use ferry_drive_fuse::Mounter;
+use ferry_engine::hub::{Access, Hub};
+use ferry_engine::rescan::rescan;
+use ferry_engine::scheduler::{Network, Settings};
+use ferry_pim_mirror::{ClientGrants, PimConfig, PimSupervisor};
 use porter_callers::choose_proc_root;
 use porter_callers::{CallerFileError, ProcCallers};
 use porter_client::{AccountsLink, GrantsLink, Porter};
@@ -244,28 +246,38 @@ impl Daemon {
         let accounts = Arc::new(porter.grants());
         // What tells this run from every other: its anchors, its new Photos devices.
         let nonce = fresh_nonce();
-        let wiring = |network| Wiring {
+        let pim = PimSupervisor::new(
+            ferry_pim_mirror::Wiring {
+                accounts: Arc::clone(&accounts),
+                hub: hub.clone(),
+                journals: paths.journals.clone(),
+                mirrors: paths.mirrors.clone(),
+                settings: Settings::default(),
+                network: network.clone(),
+                owners: Access::default(),
+                clock: ferry_sync::Clock::new(SystemClock),
+                nonce: nonce.clone(),
+            },
+            ClientGrants::new(Arc::clone(&accounts)),
+            SyncdSources,
+            pim,
+        )
+        .spawn();
+        let wiring = Wiring {
             accounts: Arc::clone(&accounts),
             hub: hub.clone(),
             paths: paths.clone(),
             settings: Settings::default(),
             network,
-            owners: Access::default(),
             clock: ferry_sync::Clock::new(SystemClock),
-            nonce: nonce.clone(),
+            nonce,
             millis: Arc::new(SystemMillis),
         };
-        let pim = PimSupervisor::new(
-            wiring(network.clone()),
-            ClientGrants::new(Arc::clone(&accounts)),
-            pim,
-        )
-        .spawn();
         #[cfg(feature = "photos-picker")]
         let photos_owners = storage.photos_owners.clone();
         let storage_files_apps = storage.files_owners.clone();
         let storage = StorageSupervisor::new(
-            wiring(network),
+            wiring,
             ClientStorageGrants::new(Arc::clone(&accounts)),
             storage,
         );

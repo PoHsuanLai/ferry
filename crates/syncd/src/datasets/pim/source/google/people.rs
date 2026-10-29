@@ -4,17 +4,17 @@
 //! sync token past its life is `400` with `EXPIRED_SYNC_TOKEN`, which is `AnchorExpired`.
 //! Contacts are converted to vCard 3.0 by [`super::person`] and arrive with their bytes.
 
-use super::super::graph::{encode, name_of};
-use super::super::{Feed, FeedChange, Page, PimSource};
 use super::person::{self, Person};
-use super::{Api, SyncCursor, read_error};
-use crate::dataset::fingerprint;
-use crate::datasets::pim::PimKind;
-use crate::datasets::pim::discover::{DiscoverError, Found};
+use ferry_engine::dataset::fingerprint;
+use ferry_pim_feed::google::{SyncCursor, read_error};
+use ferry_pim_feed::wire::{encode, name_of};
+use ferry_pim_feed::{DiscoverError, Feed, FeedChange, Found, Page, PimSource};
+use ferry_pim_mirror::google::Api;
 use ferry_sync::{Clock, DELETED};
 use ferry_sync::{
     ItemKind, More, RemoteId, RemoteItem, RemoteVersion, ReplicaError, RetryAfter, Tombstone,
 };
+use ferry_vdir::PimKind;
 use porter_client::{Grants, GrantsLink};
 use porter_core::EndpointUrl;
 use porter_core::GrantId;

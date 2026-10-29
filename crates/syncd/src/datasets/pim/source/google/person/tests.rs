@@ -1,5 +1,5 @@
 use super::*;
-use crate::datasets::pim::{PimKind, is_complete};
+use ferry_vdir::{PimKind, is_complete};
 
 fn person(json: &str) -> Person {
     serde_json::from_str(json).expect("person")

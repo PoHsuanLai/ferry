@@ -9,6 +9,7 @@ use crate::googlerig as google_rig;
 
 use common::PhotosGrant;
 use ferry_bus::SyncProxy;
+use ferry_engine::journal::Journal;
 use ferry_sync::ItemState;
 use google_rig::{
     FILES_DATASET, Media, PICKER_BEARER, Rig, SECRET_ACCESS, SECRET_REFRESH, UPLOAD_BEARER,
@@ -20,7 +21,6 @@ use syncd::datasets::photos::google::{
     ALBUM_TITLE, PickerError, PickerState, SLUG, SessionEnd, SessionId,
 };
 use syncd::datasets::storage::{FILES_APP, PHOTOS_APP};
-use syncd::journal::Journal;
 
 async fn names(sync: &SyncProxy<'_>) -> Vec<String> {
     sync.datasets().await.expect("datasets")

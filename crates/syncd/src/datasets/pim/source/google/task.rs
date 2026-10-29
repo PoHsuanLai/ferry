@@ -14,8 +14,8 @@
 //! each of its tasks a file, so the list's name is the directory's `displayname`.
 
 use super::super::civil::compact_date;
-use super::super::graph::convert::{escape, fold};
 use super::time::Stamp;
+use ferry_pim_feed::text::{escape, fold};
 use serde::Deserialize;
 
 /// A task list, as `tasklists.list` gives it.

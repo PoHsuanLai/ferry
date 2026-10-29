@@ -1,12 +1,14 @@
 //! The `Sync1` object and the tasks beside it: the roster of callers and the signal relay.
 
 use super::errors::RefusedError;
-use super::hub::{DatasetName, Event, Hub};
-use super::resolve::{ConfirmError, ConflictNumber, How, SettleError, SyncNowError};
 use super::status::{conflict_details, held_details, progress_details, status_details};
-use crate::scheduler::Pausing;
+use ferry_bus::{RESOLVE_KEEP_LOCAL, RESOLVE_KEEP_REMOTE};
 use ferry_bus::{SYNC_BUS, SYNC_PATH};
 use ferry_bus::{SyncServed, SyncServer};
+use ferry_engine::hub::{DatasetName, Event, Hub};
+use ferry_engine::resolve::{ConfirmError, ConflictNumber, How, SettleError, SyncNowError};
+use ferry_engine::scheduler::Pausing;
+use ferry_sync::Resolution;
 use porter_callers::{Caller, Callers};
 use porter_dbus::{Call, Details};
 use porter_wire::Refusal;
@@ -19,6 +21,22 @@ use zbus::fdo::DBusProxy;
 use zbus::message::Header;
 use zbus::names::BusName;
 use zbus::object_server::SignalEmitter;
+
+/// A `how` that is neither word.
+#[derive(Debug, Clone, PartialEq, Eq, thiserror::Error)]
+#[error(
+    "`{0}` is not a way to settle a conflict: use `{RESOLVE_KEEP_LOCAL}` or `{RESOLVE_KEEP_REMOTE}`"
+)]
+struct UnknownHow(String);
+
+/// What `how` said (`keep_local`, `keep_remote`).
+fn how_of(text: &str) -> Result<How, UnknownHow> {
+    match text {
+        RESOLVE_KEEP_LOCAL => Ok(How(Resolution::KeepLocal)),
+        RESOLVE_KEEP_REMOTE => Ok(How(Resolution::KeepRemote)),
+        other => Err(UnknownHow(other.to_owned())),
+    }
+}
 
 /// What every call needs.
 #[derive(Debug)]
@@ -172,7 +190,7 @@ impl<C: Callers> SyncServer for SyncObject<C> {
     ) -> Result<(), RefusedError> {
         let caller = self.0.identify(&header).await?;
         // The words first: a malformed call is the caller's to fix whatever it may see.
-        let how = how.parse::<How>().map_err(RefusedError::invalid)?;
+        let how = how_of(&how).map_err(RefusedError::invalid)?;
         let name = self.0.visible(&caller, &dataset)?;
         self.0
             .hub
@@ -183,6 +201,7 @@ impl<C: Callers> SyncServer for SyncObject<C> {
                 SettleError::NotOwner => RefusedError::of(Refusal::Denied),
                 SettleError::NoSuchConflict => RefusedError::no_such_conflict(),
                 SettleError::Failed(why) => RefusedError::failed(why),
+                _ => RefusedError::failed("the conflict could not be settled"),
             })
     }
 
@@ -209,6 +228,7 @@ impl<C: Callers> SyncServer for SyncObject<C> {
             .map_err(|error| match error {
                 ConfirmError::NoSuchDataset => RefusedError::of(Refusal::NoFittingAccount),
                 ConfirmError::NothingHeld => RefusedError::nothing_held(),
+                _ => RefusedError::failed("the discard could not be let through"),
             })
     }
 
@@ -230,6 +250,7 @@ impl<C: Callers> SyncServer for SyncObject<C> {
         self.0.hub.sync_now(&name).map_err(|error| match error {
             SyncNowError::NoSuchDataset => RefusedError::of(Refusal::NoFittingAccount),
             SyncNowError::Paused => RefusedError::paused(),
+            _ => RefusedError::failed("the dataset could not be synced now"),
         })
     }
 
@@ -305,4 +326,29 @@ pub async fn serve<C: Callers>(connection: &Connection, hub: Hub, callers: C) ->
     porter_dbus::serve_ready(connection).await?;
     connection.request_name(SYNC_BUS).await?;
     Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn the_two_words_read_and_anything_else_names_them() {
+        const CASES: &[(&str, Option<Resolution>)] = &[
+            ("keep_local", Some(Resolution::KeepLocal)),
+            ("keep_remote", Some(Resolution::KeepRemote)),
+            ("", None),
+            ("Keep_Local", None),
+            ("keep local", None),
+            ("local", None),
+        ];
+        for (text, want) in CASES {
+            let got = how_of(text);
+            assert_eq!(got.as_ref().ok().map(|how| how.0), *want, "{text:?}");
+            if let Err(error) = got {
+                let said = error.to_string();
+                assert!(said.contains("keep_local") && said.contains("keep_remote"));
+            }
+        }
+    }
 }

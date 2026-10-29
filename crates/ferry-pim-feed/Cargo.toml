@@ -1,0 +1,23 @@
+[package]
+name = "ferry-pim-feed"
+description = "What a feed hands a mirror, sans-IO: the source seam (PimSource, Feed, FeedCursor), FeedReplica that makes a feed a ferry-sync Replica, the iCalendar and vCard text rules, and the pure helpers the HTTP sources share. No request is sent, no file opened, no bus named."
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+rust-version.workspace = true
+repository.workspace = true
+publish.workspace = true
+
+[dependencies]
+ferry-sync = { workspace = true }
+ferry-vdir = { workspace = true }
+porter-capability = { workspace = true }
+porter-core = { workspace = true }
+porter-http = { workspace = true }
+porter-ids = { workspace = true }
+hex = { workspace = true }
+sha2 = { workspace = true }
+thiserror = { workspace = true }
+
+[lints]
+workspace = true

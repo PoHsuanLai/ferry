@@ -6,17 +6,17 @@
 //! must ask for them. Events are converted to iCalendar by [`super::event`] and arrive with
 //! their bytes, so the engine's fetch costs no request.
 
-use super::super::graph::name_of;
-use super::super::{Feed, FeedChange, Page, PimSource};
 use super::event::{self, Event};
-use super::{Api, SyncCursor, id_in, list_all, read_error, segment_of};
-use crate::dataset::fingerprint;
-use crate::datasets::pim::PimKind;
-use crate::datasets::pim::discover::{DiscoverError, Found};
+use ferry_engine::dataset::fingerprint;
+use ferry_pim_feed::google::{SyncCursor, id_in, read_error, segment_of};
+use ferry_pim_feed::wire::{encode, name_of};
+use ferry_pim_feed::{DiscoverError, Feed, FeedChange, Found, Page, PimSource};
+use ferry_pim_mirror::google::{Api, list_all};
 use ferry_sync::{Clock, DELETED};
 use ferry_sync::{
     ItemKind, More, RemoteId, RemoteItem, RemoteVersion, ReplicaError, RetryAfter, Tombstone,
 };
+use ferry_vdir::PimKind;
 use porter_client::{Grants, GrantsLink};
 use porter_core::EndpointUrl;
 use porter_core::GrantId;
@@ -97,11 +97,7 @@ impl<T: GrantsLink + 'static> PimSource for GoogleCalendarSource<T> {
             // A calendar shared as free/busy only cannot be listed.
             .filter(|c| c.access_role.as_deref() != Some("freeBusyReader"))
             .map(|calendar| {
-                let url = format!(
-                    "{}/calendars/{}/",
-                    self.api.base(),
-                    super::super::graph::encode(&calendar.id)
-                );
+                let url = format!("{}/calendars/{}/", self.api.base(), encode(&calendar.id));
                 Ok(Found {
                     url: WebUrl::parse(&url).map_err(|_| DiscoverError::Unreadable)?,
                     segment: segment_of(&calendar.id),
@@ -126,10 +122,7 @@ impl<T: GrantsLink + 'static> PimSource for GoogleCalendarSource<T> {
 
 impl<T: GrantsLink> GoogleCalendarFeed<T> {
     fn events_path(&self, tail: &str) -> String {
-        format!(
-            "/calendars/{}/events{tail}",
-            super::super::graph::encode(&self.calendar)
-        )
+        format!("/calendars/{}/events{tail}", encode(&self.calendar))
     }
 
     /// An event as the journal records it, with the bytes it converts to; `None` for one that
@@ -217,7 +210,7 @@ impl<T: GrantsLink + 'static> Feed for GoogleCalendarFeed<T> {
     }
 
     async fn fetch(&self, id: &RemoteId) -> Result<Vec<u8>, ReplicaError> {
-        let tail = format!("/{}", super::super::graph::encode(&id.0));
+        let tail = format!("/{}", encode(&id.0));
         let response = self
             .api
             .read(&self.api.url(&self.events_path(&tail), &[]))
@@ -239,7 +232,7 @@ impl<T: GrantsLink + 'static> Feed for GoogleCalendarFeed<T> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::datasets::pim::source::FeedCursor;
+    use ferry_pim_feed::FeedCursor;
 
     #[test]
     fn a_calendar_entry_is_named_by_the_override_else_the_summary() {

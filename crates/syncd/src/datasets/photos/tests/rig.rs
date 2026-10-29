@@ -2,9 +2,9 @@
 //! `RelayHttp` over a TCP dial with the credential added the way accountd's relay would.
 
 use super::super::{DeviceId, ManualMillis, PhotoLibrary, PhotoMetadata, PhotoOriginals};
-use crate::engine::{Engine, Report};
-use crate::journal::Journal;
 use crate::testing::scratch;
+use ferry_engine::engine::{Engine, Report};
+use ferry_engine::journal::Journal;
 use ferry_sync::Clock;
 use porter_fake_servers::{DavHandle, FakeDav, Running};
 use porter_http::http::header::{AUTHORIZATION, HeaderValue};

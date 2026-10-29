@@ -27,8 +27,6 @@ use super::folder::{FolderDataset, SLUG};
 use super::grants::{
     AppFolderStore, StorageGrants, StorageKind, app_folder_store, google_photos_endpoints,
 };
-use crate::clock::Wall;
-use crate::dataset::{Dataset, DatasetId};
 use crate::datasets::drive::{
     self, CacheKnob, DriveJournal, DriveReplica, DriveSet, Listed, LiveDrive, SIGN_IN_WORDS,
     UNREADABLE_WORDS,
@@ -37,21 +35,23 @@ use crate::datasets::photos::google::{
     GooglePicker, PhotosApi, PhotosPicker, SLUG as UPLOAD_SLUG, UploadReplica, library_http,
     picker_http,
 };
-use crate::datasets::photos::{DeviceId, PhotoLibrary, PhotosRun, PhotosWiring};
-use crate::datasets::pim::Wiring;
-use crate::driver::Driver;
-use crate::engine::Engine;
+use crate::datasets::photos::{DeviceId, Millis, PhotoLibrary, PhotosRun, PhotosWiring};
 use crate::gdrive::gdrive_replica;
 use crate::graph::graph_replica;
-use crate::journal::Journal;
-use crate::paths::AccountDir;
-use crate::scheduler::next_look;
-use crate::service::{Access, DatasetName};
+use crate::paths::Paths;
 use ferry_bus::DriveState;
 use ferry_drive::{CacheLimit, Drive, DriveConfig, FreeSpace, ReplicaSource};
 use ferry_drive_fuse::{DriveFs, Mounter, Now};
-use ferry_sync::{DriveWrite, Replica};
-use porter_client::GrantsLink;
+use ferry_engine::account::AccountDir;
+use ferry_engine::clock::Wall;
+use ferry_engine::dataset::{Dataset, DatasetId};
+use ferry_engine::driver::Driver;
+use ferry_engine::engine::Engine;
+use ferry_engine::hub::{Access, DatasetName, Hub};
+use ferry_engine::journal::Journal;
+use ferry_engine::scheduler::{Network, Settings, next_look};
+use ferry_sync::{Clock, DriveWrite, Replica};
+use porter_client::{Grants, GrantsLink};
 use porter_core::{AppName, Candidate, EndpointUrl};
 use porter_ids::WebUrl;
 use sha2::{Digest, Sha256};
@@ -165,6 +165,29 @@ impl<T: GrantsLink> Running<T> {
     }
 }
 
+/// What the storage mirrors share: the connection to accountd, the hub they register in, the
+/// paths and the scheduler's inputs.
+#[derive(Debug)]
+pub struct Wiring<T> {
+    /// accountd, for the relays.
+    pub accounts: Arc<Grants<T>>,
+    /// The running datasets.
+    pub hub: Hub,
+    /// Where journals, mirrors and libraries live.
+    pub paths: Paths,
+    /// The scheduler's settings for each dataset.
+    pub settings: Settings,
+    /// The network, as the daemon reads it.
+    pub network: watch::Receiver<Network>,
+    /// The clock the replicas date tombstones with: the daemon's.
+    pub clock: Clock,
+    /// What tells this run's new devices from every other: it differs between two runs of the
+    /// daemon (letters and digits only).
+    pub nonce: String,
+    /// The wall clock in milliseconds, for the hybrid clocks of Photos.
+    pub millis: Arc<dyn Millis>,
+}
+
 /// Keeps the Storage mirrors of every granted account.
 #[derive(Debug)]
 pub struct StorageSupervisor<T: GrantsLink, G> {
@@ -200,8 +223,7 @@ where
     T: GrantsLink + 'static,
     G: StorageGrants + 'static,
 {
-    /// A supervisor over `wiring` (its `owners` are not used: `config` names the owners of each
-    /// kind), asking `grants`.
+    /// A supervisor over `wiring` (`config` names the owners of each kind), asking `grants`.
     pub fn new(wiring: Wiring<T>, grants: G, config: StorageConfig) -> Self {
         let drives = DriveSet::default().with_settings(wiring.paths.settings.clone());
         Self {
@@ -556,7 +578,7 @@ where
         });
         let set = self.drives.clone();
         let weak = Arc::downgrade(&live);
-        let told = move |pass: &Result<drive::Pass, crate::journal::JournalError>| {
+        let told = move |pass: &Result<drive::Pass, ferry_engine::journal::JournalError>| {
             let Some(live) = weak.upgrade() else { return };
             let (state, words) = match pass {
                 Ok(pass) => match pass.outcome {
@@ -825,7 +847,7 @@ where
 /// Whether the files on demand are reconciled with the listing after `pass`: only once it
 /// ended caught up. What a pass cut short (offline, refused, failed) lacks is not gone from the
 /// drive, so nothing cached or kept is dropped against it.
-fn reconciles(pass: &Result<drive::Pass, crate::journal::JournalError>) -> bool {
+fn reconciles(pass: &Result<drive::Pass, ferry_engine::journal::JournalError>) -> bool {
     matches!(pass, Ok(pass) if pass.outcome == Listed::Done)
 }
 
@@ -928,7 +950,7 @@ mod tests {
 
     #[test]
     fn only_a_pass_that_ended_caught_up_reconciles_the_cache() {
-        let ended = |outcome| -> Result<drive::Pass, crate::journal::JournalError> {
+        let ended = |outcome| -> Result<drive::Pass, ferry_engine::journal::JournalError> {
             Ok(drive::Pass {
                 outcome,
                 ..drive::Pass::default()
@@ -943,9 +965,9 @@ mod tests {
         ] {
             assert!(!reconciles(&ended(cut)), "{cut:?}");
         }
-        assert!(!reconciles(&Err(crate::journal::JournalError::Corrupt(
-            "a test".into()
-        ))));
+        assert!(!reconciles(&Err(
+            ferry_engine::journal::JournalError::Corrupt("a test".into())
+        )));
     }
 
     #[tokio::test]

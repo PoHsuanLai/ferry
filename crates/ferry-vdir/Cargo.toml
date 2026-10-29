@@ -1,0 +1,19 @@
+[package]
+name = "ferry-vdir"
+description = "The vdir on disk (vdirsyncer's storage spec): which kind of collection a directory holds (calendar, address book, task list) and the file rules of a collection (item names, atomic writes, displayname and color files, what a reader may rely on). A library: no bus, no account stack."
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+rust-version.workspace = true
+repository.workspace = true
+publish.workspace = true
+
+[dependencies]
+porter-core = { workspace = true }
+porter-fs = { workspace = true }
+
+[dev-dependencies]
+tempfile = { workspace = true }
+
+[lints]
+workspace = true

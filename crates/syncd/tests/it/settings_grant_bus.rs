@@ -15,6 +15,9 @@ use common::{Known, client};
 use ds_settings::live::{AnyOwner, LiveClient};
 use ds_settings::schema::KeyPath;
 use ferry_bus::SyncProxy;
+use ferry_engine::account::AccountDir;
+use ferry_engine::hub::Hub;
+use ferry_engine::scheduler::{Network, Settings};
 use ferry_fake_graph::{FakeGraph, GraphHandle};
 use porter_callers::CallerRole;
 use porter_capability::{Claim, Offer, Provenance, Subject};
@@ -32,14 +35,12 @@ use porter_service_core::registry::Registry;
 use std::sync::Arc;
 use std::sync::atomic::Ordering;
 use std::time::Duration;
-use syncd::datasets::pim::Wiring;
 use syncd::datasets::storage::{
-    ClientStorageGrants, FILES_APP, PHOTOS_APP, StorageConfig, StorageSupervisor,
+    ClientStorageGrants, FILES_APP, PHOTOS_APP, StorageConfig, StorageSupervisor, Wiring,
 };
 use syncd::keep::{SyncClass, sync_allowed};
-use syncd::paths::{AccountDir, Paths};
-use syncd::scheduler::{Network, Settings};
-use syncd::service::{Access, Hub, serve};
+use syncd::paths::Paths;
+use syncd::service::serve;
 use syncd::settings::{SETTINGS_PATH, SyncSettings, serve_settings};
 use tokio::sync::watch;
 
@@ -171,7 +172,6 @@ async fn rig() -> Rig {
         paths: paths.clone(),
         settings: Settings::quick(),
         network,
-        owners: Access::default(),
         clock: ferry_sync::Clock::new(porter_ids::clock::SystemClock),
         nonce: "t1".to_owned(),
         millis: Arc::new(syncd::datasets::photos::ManualMillis::at(1_700_000_000_000)),

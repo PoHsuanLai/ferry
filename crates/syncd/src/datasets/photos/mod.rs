@@ -16,7 +16,7 @@
 //! - `manifest`: [`Manifest`], its merge and the [`Edit`]s.
 //! - `library`: [`PhotoLibrary`], the API the Photos app will call (`import`, `export`,
 //!   `manifest`, `edit`).
-//! - `originals`, `metadata`: the two [`crate::dataset::Dataset`]s.
+//! - `originals`, `metadata`: the two [`ferry_engine::dataset::Dataset`]s.
 //! - `run`: [`start`], which registers both in the hub.
 //!
 //! The library lives in `$XDG_DATA_HOME/porter/photos/<account>/` ([`crate::paths::Paths::photos_dir`]),

@@ -1,0 +1,39 @@
+[package]
+name = "ferry-engine"
+description = "The sync engine of design/31 §6 as a library: the dataset seam, the SQLite journal, the engine over a Replica and a Dataset, the pure scheduler, the driver that runs one engine on the scheduler's wake-ups, and the hub of running datasets. syncd and callie's calendard run their datasets with it; the bus objects are theirs."
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+rust-version.workspace = true
+repository.workspace = true
+publish.workspace = true
+
+[dependencies]
+ferry-sync = { workspace = true }
+# The caller type the hub's access rules judge, nothing of the bus.
+porter-callers = { workspace = true }
+porter-capability = { workspace = true }
+porter-core = { workspace = true }
+porter-ids = { workspace = true }
+hex = { workspace = true }
+rusqlite = { workspace = true }
+serde = { workspace = true }
+serde_json = { workspace = true }
+sha2 = { workspace = true }
+thiserror = { workspace = true }
+tokio = { workspace = true }
+
+[dev-dependencies]
+test-kit = { workspace = true }
+ferry-engine = { path = ".", features = ["testing"] }
+tempfile = { workspace = true }
+# A paused clock for the stop wait's timing test.
+tokio = { workspace = true, features = ["test-util"] }
+
+[features]
+# `MemoryDataset`, the in-memory local side the engine's tests (and a daemon's tests) drive, and
+# `Journal::open_unflushed`.
+testing = []
+
+[lints]
+workspace = true

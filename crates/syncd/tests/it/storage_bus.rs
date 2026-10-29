@@ -12,7 +12,11 @@ use common::hosted::{Link, host};
 use common::{Known, PhotosGrant, client};
 use ferry_bus::SyncProxy;
 use ferry_bus::{CONFLICT_KEY_NUMBER, RESOLVE_KEEP_REMOTE, SYNC_ERROR_NO_SUCH_CONFLICT};
+use ferry_engine::account::AccountDir;
+use ferry_engine::hub::{DatasetName, Hub};
+use ferry_engine::scheduler::{Network, Settings};
 use ferry_fake_graph::{FakeGraph, GraphHandle};
+use ferry_pim_mirror::AccountdUnavailable;
 use porter_callers::CallerRole;
 use porter_capability::StorageScope;
 use porter_capability::{CapabilityKind, Claim, Offer, Provenance, Subject};
@@ -35,15 +39,13 @@ use porter_service_core::registry::Registry;
 use std::pin::Pin;
 use std::sync::Arc;
 use std::sync::atomic::{AtomicBool, Ordering};
-use syncd::datasets::pim::{AccountdUnavailable, Wiring};
 use syncd::datasets::storage::{
     ClientStorageGrants, FILES_APP, PHOTOS_APP, StorageConfig, StorageGrants, StorageKind,
-    StorageSupervisor,
+    StorageSupervisor, Wiring,
 };
 use syncd::keep::sync_app;
-use syncd::paths::{AccountDir, Paths};
-use syncd::scheduler::{Network, Settings};
-use syncd::service::{Access, DatasetName, Hub, serve};
+use syncd::paths::Paths;
+use syncd::service::serve;
 use tokio::sync::watch;
 use zbus::export::futures_core::Stream;
 
@@ -211,7 +213,6 @@ async fn rig(photos: PhotosGrant) -> Rig {
         paths: paths.clone(),
         settings: quick(),
         network,
-        owners: Access::default(),
         clock: ferry_sync::Clock::new(porter_ids::clock::SystemClock),
         nonce: "t1".to_owned(),
         millis: Arc::new(syncd::datasets::photos::ManualMillis::at(1_700_000_000_000)),

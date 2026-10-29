@@ -18,22 +18,22 @@ mod json;
 mod recur;
 mod zones;
 
-use super::{Feed, FeedChange, FeedCursor, Page, PimSource};
-use crate::dataset::fingerprint;
-use crate::datasets::pim::PimKind;
-use crate::datasets::pim::discover::{DiscoverError, Found};
-use crate::datasets::pim::relay::pim_http;
+use ferry_engine::dataset::fingerprint;
+use ferry_pim_feed::wire::{decode, encode, name_of, retry_after, unreached};
+use ferry_pim_feed::{DiscoverError, Feed, FeedChange, FeedCursor, Found, Page, PimSource};
+use ferry_pim_mirror::http::get;
+use ferry_pim_mirror::pim_http;
 use ferry_sync::{Clock, DELETED};
 use ferry_sync::{
-    ItemKind, ItemPath, More, RemoteId, RemoteItem, RemoteVersion, ReplicaError, RetryAfter,
-    Tombstone,
+    ItemKind, More, RemoteId, RemoteItem, RemoteVersion, ReplicaError, RetryAfter, Tombstone,
 };
+use ferry_vdir::PimKind;
 use json::{Calendar, CalendarPage, Event, EventPage};
 use porter_client::{Grants, GrantsLink};
 use porter_core::EndpointUrl;
 use porter_core::GrantId;
-use porter_http::http::{Method, Response};
-use porter_http::{HeaderText, Http, HttpError, request};
+use porter_http::HttpError;
+use porter_http::http::Response;
 use porter_http_relay::{RelayDial, RelayHttp};
 use porter_ids::{Bytes, UnixSeconds, WebUrl};
 use sha2::{Digest, Sha256};
@@ -90,35 +90,14 @@ pub struct GraphCalendarFeed<T: GrantsLink> {
     clock: Clock,
 }
 
-pub(super) fn origin(base: &WebUrl) -> String {
+fn origin(base: &WebUrl) -> String {
     base.as_str().trim_end_matches('/').to_owned()
-}
-
-/// What a Graph or Google id keeps in a path segment: the unreserved characters and `=`, which
-/// the ids' base64 padding uses.
-const ID_SEGMENT: &porter_ids::percent::AsciiSet = &porter_ids::percent::UNRESERVED.remove(b'=');
-
-/// A path segment: everything but unreserved characters and `=` percent-encoded.
-pub(super) fn encode(segment: &str) -> String {
-    porter_ids::percent::encode(segment, ID_SEGMENT)
-}
-
-pub(super) fn decode(segment: &str) -> String {
-    porter_ids::percent::decode(segment)
 }
 
 /// The directory name of a calendar: stable (a rename must not move it) and short (Graph's ids
 /// are long).
 fn segment_of(id: &str) -> String {
     format!("graph-{}", hex::encode(&Sha256::digest(id.as_bytes())[..6]))
-}
-
-/// The file name of an event: short and safe whatever its id.
-pub(super) fn name_of(id: &str) -> ItemPath {
-    ItemPath(format!(
-        "{}.ics",
-        hex::encode(&Sha256::digest(id.as_bytes())[..10])
-    ))
 }
 
 /// A calendar's colour: its `hexColor` when it has one, else the nearest of Outlook's named
@@ -142,35 +121,12 @@ fn color_of(calendar: &Calendar) -> Option<String> {
     Some(named.to_owned())
 }
 
-pub(super) fn retry_after(response: &Response<Vec<u8>>, now: UnixSeconds) -> RetryAfter {
-    response
-        .retry_after_seconds(now)
-        .map_or(RetryAfter(30), RetryAfter)
-}
-
 fn read_error(response: &Response<Vec<u8>>, now: UnixSeconds) -> ReplicaError {
     match response.status().as_u16() {
         401 | 403 => ReplicaError::Unauthorized,
         404 => ReplicaError::Gone,
         _ => ReplicaError::Transient(retry_after(response, now)),
     }
-}
-
-pub(super) fn unreached(_: HttpError) -> ReplicaError {
-    ReplicaError::Transient(RetryAfter(30))
-}
-
-pub(super) async fn get<H: Http>(
-    http: &H,
-    url: &str,
-    prefer: Option<&str>,
-) -> Result<Response<Vec<u8>>, HttpError> {
-    let url = WebUrl::parse(url).map_err(|_| HttpError::Unreachable)?;
-    let mut builder = request(Method::GET, &url).header("Accept", "application/json");
-    if let Some(prefer) = prefer {
-        builder = builder.header("Prefer", prefer);
-    }
-    http.send(builder.body(Vec::new())?).await
 }
 
 impl<T: GrantsLink + 'static> PimSource for GraphCalendarSource<T> {
@@ -340,26 +296,11 @@ mod tests {
     use super::*;
 
     #[test]
-    fn names_are_short_stable_and_safe_whatever_the_id() {
+    fn a_directory_name_is_short_stable_and_safe_whatever_the_id() {
         let id = "AAMkAGI2TG93AAA=/with+odd/chars";
         assert_eq!(segment_of(id), segment_of(id));
         assert_ne!(segment_of(id), segment_of("other"));
         assert!(segment_of(id).len() < 20);
-        let name = name_of(id);
-        assert!(name.0.ends_with(".ics") && name.0.len() == 24, "{name:?}");
-        assert!(
-            name.0
-                .chars()
-                .all(|c| c.is_ascii_alphanumeric() || c == '.')
-        );
-    }
-
-    #[test]
-    fn a_path_segment_round_trips_through_encoding() {
-        for id in ["AAMk=", "a/b c", "x+y%z", "é"] {
-            assert_eq!(decode(&encode(id)), id);
-        }
-        assert_eq!(encode("a/b"), "a%2Fb");
     }
 
     #[test]

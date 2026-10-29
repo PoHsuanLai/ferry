@@ -14,6 +14,7 @@ use ferry_bus::SyncProxy;
 use ferry_bus::{
     CONFLICT_KEY_NUMBER, RESOLVE_KEEP_LOCAL, RESOLVE_KEEP_REMOTE, SYNC_ERROR_NO_SUCH_CONFLICT,
 };
+use ferry_engine::hub::DatasetName;
 use google_rig::{
     DRIVE_BEARER, FILES_DATASET, Rig, SECRET_ACCESS, SECRET_REFRESH, SEGMENT, client_of,
     eventually, local, rig,
@@ -22,7 +23,6 @@ use std::pin::Pin;
 use std::sync::atomic::Ordering;
 use std::time::Duration;
 use syncd::datasets::storage::FILES_APP;
-use syncd::service::DatasetName;
 use zbus::export::futures_core::Stream;
 
 async fn names(sync: &SyncProxy<'_>) -> Vec<String> {

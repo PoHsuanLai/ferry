@@ -1,8 +1,13 @@
 use super::*;
+use ferry_pim_feed::FeedCursor;
+use ferry_pim_mirror::DavCursor;
+use porter_capability::Capability;
 use porter_capability::Subject;
 use porter_capability::{Access, Delta, PimCap};
 use porter_core::{AccountId, GrantId, ProviderId};
-use porter_core::{AccountLabel, EndpointUrl, Family, LoginName, Restriction, Tls};
+use porter_core::{
+    AccountLabel, EndpointUrl, Family, LoginName, Restriction, ServiceEndpoint, Tls,
+};
 
 fn cap(transport: PimTransport) -> PimCap {
     PimCap {
@@ -113,7 +118,7 @@ fn a_cursor_text_that_is_not_the_sources_is_not_a_cursor() {
     );
     assert!(graph::DeltaLink::decode("sync-token-1").is_none());
     assert_eq!(
-        dav::DavCursor::decode("sync-token-1")
+        DavCursor::decode("sync-token-1")
             .map(|c| c.encode())
             .as_deref(),
         Some("sync-token-1")

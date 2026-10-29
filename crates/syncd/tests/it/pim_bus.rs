@@ -9,6 +9,12 @@ use crate::common;
 use common::bus::PrivateBus;
 use common::caller as caller_of;
 use common::hosted::{Link, Service, host, keep};
+use ferry_engine::hub::{Access, Hub};
+use ferry_engine::scheduler::{Network, Settings};
+use ferry_pim_mirror::{
+    AccountdUnavailable, ClientGrants, PimConfig, PimGrants, PimSupervisor, Wiring,
+};
+use ferry_vdir::{COLOR, DISPLAYNAME, PimKind, is_complete, items_in};
 use porter_callers::{Caller, CallerRole};
 use porter_capability::StorageScope;
 use porter_capability::{CapabilityKind, Claim, Offer, Provenance, Subject};
@@ -31,14 +37,9 @@ use std::path::PathBuf;
 use std::sync::Arc;
 use std::sync::atomic::{AtomicBool, AtomicUsize, Ordering};
 use std::time::Duration;
-use syncd::datasets::pim::{
-    AccountdUnavailable, COLOR, ClientGrants, DISPLAYNAME, PimConfig, PimGrants, PimKind,
-    PimSupervisor, Wiring, is_complete, items_in,
-};
+use syncd::datasets::pim::SyncdSources;
 use syncd::keep::{Keep, sync_app as syncd_app};
 use syncd::paths::Paths;
-use syncd::scheduler::{Network, Settings};
-use syncd::service::{Access, Hub};
 use tokio::sync::watch;
 
 const PASSWORD: &str = "S3CRET-PIM-APP-PASSWORD";
@@ -305,13 +306,13 @@ async fn rig(with_grants: bool) -> Rig {
     let wiring = Wiring {
         accounts: Arc::clone(&accounts),
         hub: hub.clone(),
-        paths: paths.clone(),
+        journals: paths.journals.clone(),
+        mirrors: paths.mirrors.clone(),
         settings: Settings::quick(),
         network,
         owners: Access::default(),
         clock: ferry_sync::Clock::new(porter_ids::clock::SystemClock),
         nonce: "t1".to_owned(),
-        millis: Arc::new(syncd::datasets::photos::ManualMillis::at(1_700_000_000_000)),
     };
     let accountd_up = Arc::new(AtomicBool::new(true));
     let asked = Arc::new(AtomicUsize::new(0));
@@ -322,6 +323,7 @@ async fn rig(with_grants: bool) -> Rig {
             up: Arc::clone(&accountd_up),
             asked: Arc::clone(&asked),
         },
+        SyncdSources,
         PimConfig {
             rescan: Duration::from_millis(300),
         },

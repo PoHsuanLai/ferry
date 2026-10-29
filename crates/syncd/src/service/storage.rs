@@ -21,7 +21,6 @@
 
 use super::errors::RefusedError;
 use crate::datasets::drive::{DriveEvent, DriveSet, LiveDrive};
-use crate::service::Access;
 use crate::words;
 use ferry_bus::STORAGE_PATH;
 use ferry_bus::{
@@ -31,6 +30,7 @@ use ferry_bus::{
     ItemDetails, ItemKind, ItemState, Refused, Saved, StorageServed, StorageServer,
 };
 use ferry_drive::{Node, NodeId, NodeKind, Reason, Status};
+use ferry_engine::hub::Access;
 use porter_callers::{Caller, CallerRole, Callers};
 use porter_dbus::Call;
 use porter_dbus::Details;

@@ -4,18 +4,17 @@
 
 use crate::common::bus::PrivateBus;
 use crate::common::hosted::host;
+use ferry_engine::hub::{Access, Hub};
+use ferry_engine::scheduler::{Network, Settings};
+use ferry_pim_mirror::{AccountdUnavailable, PimConfig, PimGrants, PimSupervisor, Wiring};
+use ferry_vdir::PimKind;
 use porter_core::Candidate;
 use porter_fake::cloud_provider;
 use porter_secrets::MemorySecrets;
 use porter_service_core::registry::Registry;
 use std::sync::Arc;
 use std::sync::atomic::{AtomicBool, Ordering};
-use syncd::datasets::pim::{
-    AccountdUnavailable, PimConfig, PimGrants, PimKind, PimSupervisor, Wiring,
-};
-use syncd::paths::Paths;
-use syncd::scheduler::{Network, Settings};
-use syncd::service::{Access, Hub};
+use syncd::datasets::pim::SyncdSources;
 use tokio::sync::watch;
 
 /// Grants that cannot be asked while `down` is set, and are none otherwise.
@@ -41,26 +40,17 @@ async fn a_look_that_could_not_ask_for_grants_says_it_was_not_whole_and_the_next
         MemorySecrets::default(),
     );
     let root = bus.scratch().join("syncd");
-    let paths = Paths {
-        journals: root.join("state/porter/sync"),
-        mirrors: root.join("data/porter/vdir"),
-        callers_system: root.join("none"),
-        callers_user: root.join("none"),
-        cloud: root.join("Cloud"),
-        drive_cache: root.join("cache/porter/drives"),
-        settings: root.join("config/porter/syncd/syncd.toml"),
-    };
     let (_network_up, network) = watch::channel(Network::Unmetered);
     let wiring = Wiring {
         accounts: hosted.accounts,
         hub: Hub::default(),
-        paths,
+        journals: root.join("state/porter/sync"),
+        mirrors: root.join("data/porter/vdir"),
         settings: Settings::quick(),
         network,
         owners: Access::default(),
         clock: ferry_sync::Clock::new(porter_ids::clock::SystemClock),
         nonce: "t1".to_owned(),
-        millis: Arc::new(syncd::datasets::photos::ManualMillis::at(1_700_000_000_000)),
     };
     let down = Arc::new(AtomicBool::new(true));
     let mut supervisor = PimSupervisor::new(
@@ -68,6 +58,7 @@ async fn a_look_that_could_not_ask_for_grants_says_it_was_not_whole_and_the_next
         Flaky {
             down: Arc::clone(&down),
         },
+        SyncdSources,
         PimConfig::default(),
     );
     assert!(
