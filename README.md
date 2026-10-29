@@ -1,10 +1,12 @@
 # ferry
 
-Ferry keeps the copies of your calendars, contacts, tasks, files and photos on your computer in
-step with the services your accounts reach, and shows an account's whole drive as a folder
+Ferry keeps the copies of your contacts, files and photos on your computer in step with the
+services your accounts reach, and shows an account's whole drive as a folder
 (`~/Cloud/OneDrive`, `~/Cloud/Google Drive`) whose files come down when they are opened. It is the
 sync half of what began as porter; [porter](https://github.com/PoHsuanLai/porter) is the accounts
-half (sign-in, consent, the keyring), and ferry depends on it by git rev.
+half (sign-in, consent, the keyring), and ferry depends on it by git rev. Calendars and tasks were
+ferry's and are [callie](https://github.com/PoHsuanLai/callie)'s now; callie pins ferry's engine,
+vdir and PIM-mirror libraries by git rev.
 
 ## What runs
 
@@ -18,11 +20,13 @@ half (sign-in, consent, the keyring), and ferry depends on it by git rev.
 | Crate | What it is |
 | --- | --- |
 | `ferry-sync` | the sync contract: `Replica`, anchors, base versions, conflicts, tombstones, and an in-memory replica |
+| `ferry-engine` | the dataset seam, the SQLite journal, the engine, the scheduler, the driver and the hub of running datasets, for every daemon that runs datasets (syncd, callie's calendard) |
+| `ferry-vdir`, `ferry-pim-feed`, `ferry-pim-mirror` | the vdir on disk, what a feed hands a mirror (sans-IO), and the mirror, its CalDAV/CardDAV source and its supervisor; syncd mirrors address books with them, callie calendars and task lists |
 | `storage-webdav`, `storage-graph`, `storage-gdrive` | the replicas: WebDAV, OneDrive's Graph and Google Drive |
 | `ferry-drive`, `ferry-drive-fuse`, `ferry-mountd` | files on demand over a drive's listing, the FUSE adapter and the mount helper |
 | `ferry-bus` | the `Sync1`, `Storage1` and Photos Picker interfaces |
-| `syncd` | the daemon: the journal, the engine, the scheduler, the datasets (calendars, contacts, tasks, the storage folder, whole drives, photos) and the bus objects |
-| `quickxorhash`, `windows-zones` | OneDrive's hash and the Windows-to-IANA time zone table |
+| `syncd` | the daemon: the datasets (contacts, the storage folder, whole drives, photos) over `ferry-engine`, and the bus objects |
+| `quickxorhash` | OneDrive's hash |
 | `syncd-fakes`, `ferry-fake-graph`, `ferry-rig` | test tooling, never installed |
 
 [ARCHITECTURE.md](ARCHITECTURE.md) has the edges between them.
