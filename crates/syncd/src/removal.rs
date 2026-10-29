@@ -5,9 +5,10 @@
 //! (`<data>/porter/storage/<account>`), and its drive's downloaded files
 //! (`<cache>/porter/drives/<account>`).
 //!
-//! The account is syncd's own, removed in its Settings rows (`crate::keep::Keep::remove` calls
-//! [`wipe`] and then deletes the account's stored sign-in). accountd removing an identity does
-//! not remove syncd's copy: the person removes it in the sync rows.
+//! The account is accountd's; syncd's copies of it are removed in its Settings rows
+//! (`crate::keep::Keep::remove` calls [`wipe`] and then takes back syncd's grants of it).
+//! accountd removing the account does not remove syncd's copies: the person removes them in the
+//! sync rows.
 
 use crate::paths::{AccountDir, Paths};
 use crate::service::Hub;

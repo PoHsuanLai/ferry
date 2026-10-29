@@ -2,8 +2,8 @@
 //!
 //! The binary reads its arguments, asks `Config::from_env` for the environment's answers, then
 //! builds and runs the daemon, all in the library (`syncd::daemon`): it loads the caller tables
-//! (the files accountd reads), opens its own accounts (it signs in for itself, "Continue as", and
-//! keeps its own tokens under the keyring namespace `porter.syncd`), serves its Settings rows and
+//! (the files accountd reads), reaches accountd over the session bus (the accounts, the grants
+//! and the relays are accountd's: syncd holds no token), serves its Settings rows and
 //! `org.quire.Sync1` over the hub of running datasets. The PIM
 //! supervisor (W6e) keeps a calendar or address book mirror running for every Calendar or
 //! Contacts grant syncd holds (its own grants, made by the sync switches); with no grant `Datasets` answers an empty list and every name the
@@ -14,8 +14,8 @@
 //!
 //! What stays here is the network: NetworkManager is not read yet, so the network is taken as
 //! unmetered and up.
-// The PIM supervisor's future nests the whole account service's generics; peephole's caller
-// types (porter-dbus ProcCallers) take its layout past the default depth of 128.
+// peephole's caller types (porter-dbus ProcCallers) take the daemon's futures past the default
+// depth of 128.
 #![recursion_limit = "256"]
 
 use clap::Parser;
@@ -23,7 +23,7 @@ use std::process::ExitCode;
 use syncd::scheduler::Network;
 use syncd::{Config, Daemon};
 
-/// porter's sync service (`org.quire.Sync1`).
+/// ferry's sync service (`org.quire.Sync1`).
 #[derive(Debug, Parser)]
 #[command(name = "syncd", version)]
 struct Args {}

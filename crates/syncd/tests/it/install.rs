@@ -255,7 +255,5 @@ fn the_script_builds_the_daemon_and_the_helper_with_default_features_only() {
     assert!(!builds[0].contains("feature"), "{}", builds[0]);
     assert!(builds[0].contains("--release"));
     assert!(script.contains("-p syncd -p ferry-mountd"));
-    for test_only in ["test-keys", "test-proc-root"] {
-        assert!(!script.contains(test_only), "{test_only}");
-    }
+    assert!(!script.contains("test-proc-root"));
 }

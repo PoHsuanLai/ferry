@@ -59,7 +59,7 @@ fn the_unit_is_a_sandbox_that_writes_only_its_own_directories() {
     }
     // Journals under state, mirrors under data: nothing else is writable, and both exist before
     // the sandbox starts (a missing ReadWritePaths entry fails the unit).
-    // Its own accounts (the registry) sit beside the journals' directory.
+    // `quire/syncd` is kept for what the unit has always made; nothing is written there now.
     assert_eq!(
         value(&unit, "StateDirectory"),
         Some("porter/sync quire/syncd")
@@ -114,7 +114,7 @@ fn showing_drives_in_files_left_the_sandbox_as_it_was() {
 #[test]
 fn every_path_syncd_writes_is_writable_under_the_unit() {
     use std::path::{Path, PathBuf};
-    use syncd::paths::{AccountDir, KeepPaths, Paths};
+    use syncd::paths::{AccountDir, Paths};
 
     let unit = dist("syncd.service");
     // The unit's specifiers as a person with HOME=/h has them.
@@ -152,10 +152,6 @@ fn every_path_syncd_writes_is_writable_under_the_unit() {
         paths.settings.clone(),
     ];
     written.extend(paths.account_dirs(&account));
-    // Its own accounts: the registry (and its backup beside it) and the audit file.
-    let keep = KeepPaths::resolve(|name| (name == "HOME").then(|| "/h".to_owned())).expect("keep");
-    written.push(keep.registry_dir.join("registry.json.bak"));
-    written.push(keep.audit.clone());
     for path in &written {
         let under_state = states.iter().any(|state| path.starts_with(state));
         let under_writable = writable.iter().any(|root| path.starts_with(root));
@@ -185,14 +181,12 @@ fn the_test_proc_root_feature_is_not_a_default_feature() {
         .and_then(|d| d.as_array())
         .cloned()
         .unwrap_or_default();
-    // Both test-only knobs (`SYNCD_PROC_ROOT`, `SYNCD_KEYS`) are features, and neither is default.
-    for feature in ["test-proc-root", "test-keys"] {
-        assert!(features.contains_key(feature), "{feature}");
-        assert!(
-            default.iter().all(|f| f.as_str() != Some(feature)),
-            "{feature}: {default:?}"
-        );
-    }
+    // The test-only knob (`SYNCD_PROC_ROOT`) is a feature, and it is not default.
+    assert!(features.contains_key("test-proc-root"));
+    assert!(
+        default.iter().all(|f| f.as_str() != Some("test-proc-root")),
+        "{default:?}"
+    );
 }
 
 #[test]
@@ -202,7 +196,11 @@ fn syncd_is_one_app_id_in_every_test_and_doc() {
     // /etc/porter/callers.toml.)
     let stray = ["org.quire.", "Syncd"].concat();
     let root = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
-    let mut pending = vec![root.join("src"), root.join("tests"), root.join("../../docs")];
+    let mut pending = vec![
+        root.join("src"),
+        root.join("tests"),
+        root.join("../../docs"),
+    ];
     while let Some(path) = pending.pop() {
         if path.is_dir() {
             pending.extend(

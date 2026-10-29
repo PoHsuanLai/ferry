@@ -1,79 +1,71 @@
-//! syncd's own accounts. Whoever uses a credential holds it: syncd signs in for itself ("Continue
-//! as") and keeps its own tokens, in its own registry (`$XDG_STATE_HOME/quire/syncd/keys`) and its
-//! own keyring namespace (`porter.syncd`), in a service it hosts in process. accountd only says
-//! which identities the person has signed in and shows syncd as one of the apps using one.
+//! What syncd keeps of the accounts the person has. The accounts are accountd's: syncd lists
+//! them, asks accountd for the grants it needs and reads its own, all through porter-client
+//! (`Grants`, `Accounts`), over the bus in the daemon and in process in tests. syncd holds no
+//! account, no token and no sign-in of its own; what it keeps is a switch per account and class
+//! in the grants accountd holds for it.
 //!
-//! - [`Keep::continue_as`]: the person picks an identity in accountd's sheet
-//!   ([`Directory::offer`]), syncd signs that address in through the sheet host
-//!   (`AccountService::sign_in_as`, opening the provider's page on the address), then tells
-//!   accountd it uses the identity ([`Directory::register_use`]).
-//! - [`Keep::set_sync`]: the sync switches. On records syncd's own grant for the class (the
-//!   switch is the person's answer: [`SyncSheets`] answers syncd's consent ask from it), off takes
-//!   it back, and the mirror stops at the supervisor's next look; the files stay.
+//! - [`Keep::set_sync`]: the sync switches. On asks accountd for the grant of the class
+//!   (`Grants::request_grant`): accountd's consent sheet shows the first time and its answer is
+//!   kept, so a later turning on finds the grant and asks nothing. Off takes the grant back, and
+//!   the mirror stops at the supervisor's next look; the files stay.
 //! - [`Keep::show_in_files`]: "Show in Files". On asks the person for the whole drive in a
-//!   sign-in of its own when the account was not given it yet ([`Hosted::extend_access`]), then
-//!   records syncd's grant of it, and the supervisor lists the drive at its next look; off takes
-//!   the grant back and keeps the listing, and the access stays given, so on again asks nothing.
+//!   sign-in of its own when the account was not given it yet (`Grants::extend_access`), then
+//!   asks for the grant of it, and the supervisor lists the drive at its next look; off takes the
+//!   grant back and keeps the listing, and the access stays given, so on again asks nothing.
 //! - [`Keep::keep_everything`]: "Keep Everything Downloaded" for a drive shown in Files, kept in
 //!   syncd's settings so it holds across restarts (the drive does the keeping:
 //!   `ferry_drive::Drive::set_keep_all`).
-//! - [`Keep::remove`]: forgets an account: stops its datasets, deletes its journals and mirrors
-//!   ([`crate::removal::wipe`]) and its secrets. accountd removing the identity does not do this:
-//!   the person removes it in the sync rows.
+//! - [`Keep::add_and_keep`]: "Add Account": accountd's add-account sheet, then the first thing
+//!   the account offers for syncd to keep switched on.
+//! - [`Keep::remove`]: forgets an account here: stops its datasets, deletes its journals and
+//!   mirrors ([`crate::removal::wipe`]) and takes back syncd's grants of it. The account stays in
+//!   accountd, which the person removes it from.
 
-mod audit;
 mod classes;
-mod hosted;
 
-pub use audit::FileAudit;
 pub use classes::{
-    SyncClass, claims_whole_drive, drive_allowed, drive_key, keys_of, lists_whole_drive, need_for,
-    photos_key, sync_allowed, sync_app, sync_key, sync_offers,
+    SyncClass, claims_whole_drive, drive_allowed, drive_key, holds, keys_of, lists_whole_drive,
+    need_for, photos_key, sync_allowed, sync_app, sync_key, sync_offers,
 };
-pub use hosted::{Directory, Hosted, Intent, Pick, SyncSheets, account_of};
 
 use crate::datasets::drive::{DriveSet, Kept};
 use crate::paths::{AccountDir, Paths};
 use crate::removal;
 use crate::service::Hub;
 use porter_capability::{CapabilityKind, Toggle};
-use porter_client::IdentitiesError;
-use porter_core::AccountId;
-use porter_core::GrantKey;
-use porter_core::consent::Usage;
-use porter_core::{Account, DataClass};
-use porter_provider::{ConsentHistory, LoginHint};
-use porter_service_accounts::SignInAs;
-use porter_wire::{AccountsReply, AccountsRequest};
+use porter_client::{
+    Accounts, AccountsError, AccountsLink, ConsentOffer, Grants, GrantsError, GrantsLink,
+    ListedAccount, Porter,
+};
+use porter_core::consent::{Grant, Usage};
+use porter_core::{Account, AccountId, GrantKey, ProviderHint};
 use porter_wire::{ParentWindow, Refusal};
+use std::sync::Arc;
 
-/// Why "Continue as" did not end in an account.
+/// Why "Add Account" did not end in an account.
 #[derive(Debug, Clone, PartialEq, Eq, thiserror::Error)]
 #[non_exhaustive]
 pub enum ContinueError {
-    /// The person closed the sheet without picking, or without finishing the sign-in.
+    /// The person closed the sheet without finishing the sign-in.
     #[error("the sign-in was closed before it finished")]
     Cancelled,
-    /// No account is signed in on this computer to continue as.
-    #[error("there is no account to continue as")]
-    NoIdentity,
-    /// The picked account's address is not one a sign-in page can open on.
-    #[error("that account's address cannot be used to sign in")]
-    Address,
+    /// An add-account sheet of syncd's is open already.
+    #[error("another sign-in is open")]
+    Busy,
     /// The sign-in could not be finished.
     #[error("the account could not be signed in")]
     Failed,
-    /// accountd could not be asked.
+    /// accountd could not be reached.
     #[error("the account service could not be reached")]
-    Directory,
+    Unreachable,
 }
 
 /// Why a sync switch did not change.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, thiserror::Error)]
 #[non_exhaustive]
 pub enum SwitchError {
-    /// syncd has no such account.
-    #[error("that account is not one of the sync accounts")]
+    /// accountd has no such account.
+    #[error("that account is not one of the accounts")]
     UnknownAccount,
     /// The account offers nothing of this kind for syncd to keep.
     #[error("this account has nothing of that kind to keep")]
@@ -81,34 +73,40 @@ pub enum SwitchError {
     /// The grant could not be recorded or taken back.
     #[error("that could not be saved")]
     Unsaved,
-    /// The person did not give the access the switch needs (they closed the page, refused it,
-    /// or it could not be asked).
+    /// The person did not give the access the switch needs (they closed the sheet or the page,
+    /// refused it, or it could not be asked).
     #[error("the access was not given")]
     NotGiven,
+    /// accountd could not be reached.
+    #[error("the account service could not be reached")]
+    Unreachable,
 }
 
 /// Why an account was not removed.
 #[derive(Debug, Clone, PartialEq, Eq, thiserror::Error)]
 #[non_exhaustive]
 pub enum RemoveError {
-    /// syncd has no such account.
-    #[error("that account is not one of the sync accounts")]
+    /// accountd has no such account.
+    #[error("that account is not one of the accounts")]
     Unknown,
     /// Its journals or mirrors could not be deleted; nothing else was removed.
     #[error("its files on this computer could not be deleted: {0}")]
     Files(String),
-    /// Its stored credentials could not be deleted.
-    #[error("its stored sign-in could not be deleted")]
-    Secrets,
+    /// Its grants could not be taken back.
+    #[error("its permissions could not be taken back")]
+    Grants,
+    /// accountd could not be reached.
+    #[error("the account service could not be reached")]
+    Unreachable,
 }
 
-/// How a "Continue as" ended well.
+/// How "Add Account" ended well.
 #[derive(Debug, Clone, PartialEq, Eq)]
 #[non_exhaustive]
 pub enum Continued {
-    /// syncd signed the identity in: a new account.
+    /// accountd added the account.
     SignedIn(AccountId),
-    /// syncd already had this account; nothing was signed in again.
+    /// accountd already had this account; nothing was added.
     AlreadyHere(AccountId),
 }
 
@@ -121,18 +119,44 @@ impl Continued {
     }
 }
 
+/// The accounts the person has and the grants syncd holds, as accountd answered them together.
+#[derive(Debug, Clone, Default, PartialEq, Eq)]
+pub struct Snapshot {
+    /// Every account, in accountd's order, with what accountd calls its provider.
+    pub accounts: Vec<ListedAccount>,
+    /// The grants syncd holds.
+    pub grants: Vec<Grant>,
+}
+
+impl Snapshot {
+    /// The account `id` is.
+    pub fn account(&self, id: &AccountId) -> Option<&Account> {
+        self.accounts
+            .iter()
+            .map(|listed| &listed.account)
+            .find(|account| account.id == *id)
+    }
+
+    /// What accountd calls the provider of the account `id`, when it says.
+    pub fn provider_label(&self, id: &AccountId) -> Option<&str> {
+        self.accounts
+            .iter()
+            .find(|listed| listed.account.id == *id)
+            .and_then(|listed| listed.provider_label.as_deref())
+    }
+}
+
 /// The folder an account's journals, cache and drive are kept under, and its drive's id.
 fn drive_dir(account: &AccountId) -> Option<AccountDir> {
     AccountDir::parse(&porter_ids::object_segment(account.as_str()))
 }
 
-/// syncd's accounts over the service it hosts and the directory of identities.
+/// What syncd keeps of the accounts, over accountd through porter-client.
 #[derive(Debug)]
-pub struct Keep<H, D> {
-    hosted: std::sync::Arc<H>,
-    directory: D,
-    intent: Intent,
-    /// One switch at a time: the intent names the account being turned on.
+pub struct Keep<T> {
+    grants: Arc<Grants<T>>,
+    accounts: Accounts<T>,
+    /// One switch at a time: a consent sheet answers the ask that opened it.
     turning: tokio::sync::Mutex<()>,
     paths: Paths,
     hub: Hub,
@@ -140,20 +164,12 @@ pub struct Keep<H, D> {
     drives: DriveSet,
 }
 
-impl<H: Hosted, D: Directory> Keep<H, D> {
-    /// The accounts of `hosted`, continuing as the identities `directory` offers. `intent` is
-    /// the one the service's [`SyncSheets`] reads; `paths` and `hub` are what a removal wipes.
-    pub fn new(
-        hosted: std::sync::Arc<H>,
-        directory: D,
-        intent: Intent,
-        paths: Paths,
-        hub: Hub,
-    ) -> Self {
+impl<T: GrantsLink + AccountsLink> Keep<T> {
+    /// The accounts of `porter`; a removal wipes what `paths` and `hub` name.
+    pub fn new(porter: &Porter<T>, paths: Paths, hub: Hub) -> Self {
         Self {
-            hosted,
-            directory,
-            intent,
+            grants: Arc::new(porter.grants()),
+            accounts: porter.accounts(),
             turning: tokio::sync::Mutex::new(()),
             paths,
             hub,
@@ -169,68 +185,44 @@ impl<H: Hosted, D: Directory> Keep<H, D> {
         self
     }
 
-    /// The registry: the accounts syncd signed in and its own grants.
-    pub fn registry(&self) -> porter_service_core::registry::Registry {
-        self.hosted.registry()
+    /// The accounts and syncd's grants, as accountd answers now.
+    ///
+    /// # Errors
+    /// accountd could not be asked.
+    pub async fn snapshot(&self) -> Result<Snapshot, GrantsError> {
+        let accounts = self.grants.accounts().await?;
+        let grants = self.grants.grants().await?;
+        Ok(Snapshot { accounts, grants })
     }
 
-    /// "Continue as": the person picks an identity, syncd signs it in (unless it already holds
-    /// it) and says it uses the identity.
-    pub async fn continue_as(&self, window: &ParentWindow) -> Result<Continued, ContinueError> {
-        let pick = self
-            .directory
-            .offer(window)
-            .await
-            .map_err(|why| match why {
-                IdentitiesError::Cancelled => ContinueError::Cancelled,
-                IdentitiesError::NoIdentity => ContinueError::NoIdentity,
-                _ => ContinueError::Directory,
-            })?;
-        let held = self
-            .hosted
-            .registry()
-            .accounts
-            .into_iter()
-            .find(|a| a.label.0 == pick.address.0 && a.provider == pick.provider);
-        let continued = match held {
-            Some(account) => Continued::AlreadyHere(account.id),
-            None => {
-                let hint = LoginHint::parse(&pick.address.0).map_err(|_| ContinueError::Address)?;
-                // The identity was signed in to accountd with this same client, so the person
-                // agreed to what it asks before; the service asks again if the issuer says not.
-                let request =
-                    SignInAs::new(pick.provider.clone(), hint, ConsentHistory::SignedInBefore);
-                match self.hosted.sign_in_as(request, window.clone()).await {
-                    AccountsReply::Added(id) => Continued::SignedIn(id),
-                    AccountsReply::AlreadyAdded(id) => Continued::AlreadyHere(id),
-                    AccountsReply::Refused(Refusal::Dismissed) => {
-                        return Err(ContinueError::Cancelled);
-                    }
-                    _ => return Err(ContinueError::Failed),
-                }
-            }
-        };
-        self.directory
-            .register_use(&pick.id)
-            .await
-            .map_err(|_| ContinueError::Directory)?;
-        Ok(continued)
+    /// "Add Account": accountd's add-account sheet. An account the person signs in to that
+    /// accountd already had is [`Continued::AlreadyHere`].
+    pub async fn add_account(&self, window: &ParentWindow) -> Result<Continued, ContinueError> {
+        match self.accounts.add(ProviderHint::Any, window).await {
+            Ok(id) => Ok(Continued::SignedIn(id)),
+            Err(AccountsError::AlreadyAdded(id)) => Ok(Continued::AlreadyHere(id)),
+            Err(AccountsError::Refused(Refusal::Dismissed)) => Err(ContinueError::Cancelled),
+            Err(AccountsError::Busy) => Err(ContinueError::Busy),
+            Err(AccountsError::Link(_)) => Err(ContinueError::Unreachable),
+            Err(_) => Err(ContinueError::Failed),
+        }
     }
 
-    /// "Continue as", then the first thing the account offers for syncd to keep switched on
-    /// (the files, else the photos): the person asked to sync this account. The switch turns on
-    /// only once the sign-in finished.
-    pub async fn continue_and_keep(
-        &self,
-        window: &ParentWindow,
-    ) -> Result<Continued, ContinueError> {
-        let continued = self.continue_as(window).await?;
+    /// "Add Account", then the first thing the account offers for syncd to keep (the files, else
+    /// the photos): the person asked to sync this account. The switch turns on only once the
+    /// account was added.
+    pub async fn add_and_keep(&self, window: &ParentWindow) -> Result<Continued, ContinueError> {
+        let continued = self.add_account(window).await?;
         let account = continued.account().clone();
-        let first = crate::keep::account_of(&self.registry(), &account)
-            .and_then(|row| sync_offers(&row).first().copied());
+        let first = match self.snapshot().await {
+            Ok(snapshot) => snapshot
+                .account(&account)
+                .and_then(|row| sync_offers(row).first().copied()),
+            Err(_) => None,
+        };
         if let Some(class) = first {
-            // A switch that is refused leaves the account signed in with its switches off, as
-            // the person can turn them on in the rows.
+            // A switch that is refused leaves the account added with its switches off, as the
+            // person can turn them on in the rows.
             if let Err(why) = self.set_sync(&account, class, Toggle::On).await {
                 eprintln!("syncd: could not switch sync on for a new account: {why}");
             }
@@ -245,71 +237,67 @@ impl<H: Hosted, D: Directory> Keep<H, D> {
         class: SyncClass,
         toggle: Toggle,
     ) -> Result<(), SwitchError> {
-        let registry = self.hosted.registry();
-        let row = account_of(&registry, account).ok_or(SwitchError::UnknownAccount)?;
+        let snapshot = self.snapshot().await.map_err(|_| SwitchError::Unreachable)?;
+        let row = snapshot
+            .account(account)
+            .ok_or(SwitchError::UnknownAccount)?;
         match toggle {
             Toggle::On => {
-                if !sync_offers(&row).contains(&class) {
+                if !sync_offers(row).contains(&class) {
                     return Err(SwitchError::NothingToKeep);
                 }
-                if sync_allowed(&registry.grants, account, class) {
+                if sync_allowed(&snapshot.grants, account, class) {
                     return Ok(());
                 }
-                let _one_switch = self.turning.lock().await;
-                self.intent.set(account.clone());
-                let reply = self
-                    .hosted
-                    .answer(AccountsRequest::Choose {
-                        need: need_for(&row, class),
-                        class: class.class(),
-                        usage: Usage::Background,
-                        window: ParentWindow::Unparented,
-                    })
-                    .await;
-                self.intent.clear();
-                match reply {
-                    AccountsReply::Chosen(chosen) if chosen.account == *account => Ok(()),
-                    _ => Err(SwitchError::Unsaved),
-                }
+                let offer = ConsentOffer {
+                    need: need_for(row, class),
+                    class: class.class(),
+                    usage: Usage::Background,
+                };
+                self.ask(account, &offer).await
             }
-            _ => self.revoke(&keys_of(account, class)).await,
+            _ => self.revoke(&snapshot.grants, &keys_of(account, class)).await,
         }
     }
 
     /// Whether Files offers "Show in Files" for `account`: its drive is one the listing reads
     /// whole, and its provider asks the whole drive on use.
-    pub fn offers_files(&self, account: &Account) -> bool {
+    pub async fn offers_files(&self, account: &Account) -> bool {
         lists_whole_drive(account)
             && self
-                .hosted
+                .grants
                 .asks_on_use(&account.provider, CapabilityKind::Storage)
+                .await
+                .unwrap_or(false)
     }
 
     /// "Show in Files" on or off for `account`. On, when the account was not given the whole
     /// drive yet, asks the person for it in a sign-in of its own (the browser asks that alone),
-    /// then records syncd's grant of it; a refusal there is [`SwitchError::NotGiven`] and nothing
+    /// then asks for syncd's grant of it; a refusal there is [`SwitchError::NotGiven`] and nothing
     /// is recorded. Off takes the grant back; the listing's journal and the access given stay.
     pub async fn show_in_files(
         &self,
         account: &AccountId,
         toggle: Toggle,
     ) -> Result<(), SwitchError> {
-        let registry = self.hosted.registry();
-        let row = account_of(&registry, account).ok_or(SwitchError::UnknownAccount)?;
+        let snapshot = self.snapshot().await.map_err(|_| SwitchError::Unreachable)?;
+        let row = snapshot
+            .account(account)
+            .ok_or(SwitchError::UnknownAccount)?;
         match toggle {
             Toggle::On => {
-                if !self.offers_files(&row) {
+                if !self.offers_files(row).await {
                     return Err(SwitchError::NothingToKeep);
                 }
-                if drive_allowed(&registry.grants, account) {
+                if drive_allowed(&snapshot.grants, account) {
                     return Ok(());
                 }
-                if !claims_whole_drive(&row) {
-                    self.hosted
+                if !claims_whole_drive(row) {
+                    self.grants
                         .extend_access(
                             account,
-                            vec![CapabilityKind::Storage],
-                            ParentWindow::Unparented,
+                            &[CapabilityKind::Storage],
+                            &ParentWindow::Unparented,
                         )
                         .await
                         .map_err(|why| {
@@ -317,34 +305,30 @@ impl<H: Hosted, D: Directory> Keep<H, D> {
                             SwitchError::NotGiven
                         })?;
                 }
-                let _one_switch = self.turning.lock().await;
-                self.intent.set(account.clone());
-                let reply = self
-                    .hosted
-                    .answer(AccountsRequest::Choose {
-                        need: crate::datasets::storage::drive_need(),
-                        class: DataClass::Files,
-                        usage: Usage::Background,
-                        window: ParentWindow::Unparented,
-                    })
-                    .await;
-                self.intent.clear();
-                match reply {
-                    AccountsReply::Chosen(chosen) if chosen.account == *account => Ok(()),
-                    _ => Err(SwitchError::Unsaved),
-                }
+                let offer = ConsentOffer {
+                    need: crate::datasets::storage::drive_need(),
+                    class: porter_core::DataClass::Files,
+                    usage: Usage::Background,
+                };
+                self.ask(account, &offer).await
             }
-            _ => self.revoke(&[drive_key(account)]).await,
+            _ => self.revoke(&snapshot.grants, &[drive_key(account)]).await,
         }
     }
 
     /// "Keep Everything Downloaded" on or off for the drive of `account`, which must be shown in
     /// Files. It is kept in syncd's settings, so the drive keeps everything again after a restart
     /// (and after Show in Files is turned off and on again); the drive shown now follows at once.
-    pub fn keep_everything(&self, account: &AccountId, toggle: Toggle) -> Result<(), SwitchError> {
-        let registry = self.hosted.registry();
-        account_of(&registry, account).ok_or(SwitchError::UnknownAccount)?;
-        if !drive_allowed(&registry.grants, account) {
+    pub async fn keep_everything(
+        &self,
+        account: &AccountId,
+        toggle: Toggle,
+    ) -> Result<(), SwitchError> {
+        let snapshot = self.snapshot().await.map_err(|_| SwitchError::Unreachable)?;
+        snapshot
+            .account(account)
+            .ok_or(SwitchError::UnknownAccount)?;
+        if !drive_allowed(&snapshot.grants, account) {
             return Err(SwitchError::NothingToKeep);
         }
         let dir = drive_dir(account).ok_or(SwitchError::UnknownAccount)?;
@@ -374,46 +358,50 @@ impl<H: Hosted, D: Directory> Keep<H, D> {
     }
 
     /// The account whose drive is `drive` (a drive's id is its account's folder name).
-    pub fn account_of_drive(&self, drive: &str) -> Option<AccountId> {
-        self.hosted
-            .registry()
+    pub async fn account_of_drive(&self, drive: &str) -> Option<AccountId> {
+        let snapshot = self.snapshot().await.ok()?;
+        snapshot
             .accounts
             .into_iter()
-            .map(|account| account.id)
+            .map(|listed| listed.account.id)
             .find(|id| drive_dir(id).is_some_and(|dir| dir.as_str() == drive))
     }
 
+    /// Asks accountd for the grant `offer` names, for `account`: accountd's chooser and consent
+    /// sheet. The grant of another account, which the person may pick in the chooser, is theirs
+    /// to give and stays; this switch stays off then.
+    async fn ask(&self, account: &AccountId, offer: &ConsentOffer) -> Result<(), SwitchError> {
+        let _one_switch = self.turning.lock().await;
+        match self
+            .grants
+            .request_grant(offer, &ParentWindow::Unparented)
+            .await
+        {
+            Ok(chosen) if chosen.account == *account => Ok(()),
+            Ok(_) => Err(SwitchError::NotGiven),
+            Err(GrantsError::Refused(_) | GrantsError::Busy) => Err(SwitchError::NotGiven),
+            Err(_) => Err(SwitchError::Unreachable),
+        }
+    }
+
     /// Takes back every grant of syncd's under one of `wanted`.
-    async fn revoke(&self, wanted: &[GrantKey]) -> Result<(), SwitchError> {
-        let grants = self.hosted.grants();
-        for grant in grants.iter().filter(|g| wanted.contains(&g.key)) {
-            if self.hosted.revoke(&grant.id).await.is_err() {
+    async fn revoke(&self, held: &[Grant], wanted: &[GrantKey]) -> Result<(), SwitchError> {
+        for grant in held.iter().filter(|g| holds(g, wanted)) {
+            if self.grants.revoke(&grant.id).await.is_err() {
                 return Err(SwitchError::Unsaved);
             }
         }
         Ok(())
     }
 
-    /// Signs `account` in again, through the sheet.
-    pub async fn sign_in_again(
-        &self,
-        account: &AccountId,
-        window: ParentWindow,
-    ) -> Result<(), ContinueError> {
-        match self.hosted.sign_in_again(account, window).await {
-            AccountsReply::Reauthenticated => Ok(()),
-            AccountsReply::Refused(Refusal::Dismissed) => Err(ContinueError::Cancelled),
-            _ => Err(ContinueError::Failed),
-        }
-    }
-
-    /// Removes `account`: its drive is let go (held, and what was made or changed in its folder
-    /// and not uploaded written out to a folder of its own beside it), then its datasets stop,
-    /// its journals, mirrors and cache are deleted, and its stored sign-in and grants. What was
-    /// kept. A removal that fails leaves the account and starts its drive again; what was kept
-    /// stays where it is, so trying again keeps nothing twice.
+    /// Removes `account` here: its drive is let go (held, and what was made or changed in its
+    /// folder and not uploaded written out to a folder of its own beside it), then its datasets
+    /// stop, its journals, mirrors and cache are deleted, and syncd's grants of it are taken
+    /// back. What was kept is returned. A removal that fails leaves the account and starts its
+    /// drive again; what was kept stays where it is, so trying again keeps nothing twice.
     pub async fn remove(&self, account: &AccountId) -> Result<Vec<Kept>, RemoveError> {
-        account_of(&self.hosted.registry(), account).ok_or(RemoveError::Unknown)?;
+        let snapshot = self.snapshot().await.map_err(|_| RemoveError::Unreachable)?;
+        snapshot.account(account).ok_or(RemoveError::Unknown)?;
         let dir = drive_dir(account).ok_or(RemoveError::Unknown)?;
         let failed = |why: RemoveError| {
             self.drives.release(dir.as_str());
@@ -427,10 +415,12 @@ impl<H: Hosted, D: Directory> Keep<H, D> {
         removal::wipe(&self.paths, &self.hub, &dir)
             .await
             .map_err(|why| failed(RemoveError::Files(why.to_string())))?;
-        self.hosted
-            .remove_account(account)
-            .await
-            .map_err(|_| failed(RemoveError::Secrets))?;
+        for grant in snapshot.grants.iter().filter(|g| g.key.account == *account) {
+            self.grants
+                .revoke(&grant.id)
+                .await
+                .map_err(|_| failed(RemoveError::Grants))?;
+        }
         self.drives.forget(dir.as_str());
         Ok(kept)
     }

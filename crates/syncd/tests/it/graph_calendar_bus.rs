@@ -1,5 +1,5 @@
-//! A Microsoft calendar grant mirrored into the vdir, on one private bus: syncd's own account
-//! service (hosted in process over in-memory secrets, a fake provider that mints a token for the
+//! A Microsoft calendar grant mirrored into the vdir, on one private bus: accountd
+//! (hosted in process over in-memory secrets, a fake provider that mints a token for the
 //! endpoint's audience) holds the OAuth credential and runs the relay, which adds the bearer; syncd's
 //! supervisor, holding a Calendar grant whose capability's transport is `graph`, lists the
 //! calendars of the rig's `FakeGraph` and mirrors each calendar's `events/delta` as `.ics` files

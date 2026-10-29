@@ -1,4 +1,4 @@
-//! The PIM mirror end to end on one private bus: syncd's own account service (hosted in process
+//! The PIM mirror end to end on one private bus: accountd (hosted in process
 //! over in-memory secrets) holds the app password and runs the relay; syncd's supervisor, holding a Calendar
 //! and a Contacts grant, discovers the collections of a fake Nextcloud through the relay and
 //! mirrors each into a vdir under a scratch `$XDG_DATA_HOME`. Nothing here touches the real
@@ -8,7 +8,7 @@ use crate::common;
 
 use common::bus::PrivateBus;
 use common::caller as caller_of;
-use common::hosted::{Link, NoDirectory, Service, host, keep};
+use common::hosted::{Link, Service, host, keep};
 use porter_callers::{Caller, CallerRole};
 use porter_capability::StorageScope;
 use porter_capability::{CapabilityKind, Claim, Offer, Provenance, Subject};
@@ -145,7 +145,7 @@ struct Rig {
     mirrors: PathBuf,
     service: Arc<Service>,
     /// syncd's accounts, whose `remove` is what the Settings row runs.
-    own: Keep<Service, NoDirectory>,
+    own: Keep<Link>,
     accountd_up: Arc<AtomicBool>,
     asked: Arc<AtomicUsize>,
     grants: Vec<GrantId>,
@@ -300,7 +300,7 @@ async fn rig(with_grants: bool) -> Rig {
         settings: root.join("config/porter/syncd/syncd.toml"),
     };
     let hub = Hub::default();
-    let own = keep(&hosted, NoDirectory, paths.clone(), hub.clone());
+    let own = keep(&hosted, paths.clone(), hub.clone());
     let (network_up, network) = watch::channel(Network::Unmetered);
     let wiring = Wiring {
         accounts: Arc::clone(&accounts),

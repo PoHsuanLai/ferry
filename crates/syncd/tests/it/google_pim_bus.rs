@@ -1,5 +1,5 @@
 //! A Google account's Calendar, Contacts and Tasks mirrored into the vdir, on one private bus:
-//! syncd's own account service (hosted in process over in-memory secrets, a fake provider that
+//! accountd (hosted in process over in-memory secrets, a fake provider that
 //! mints a token for each endpoint's audience) holds the credential, which adds the bearer; syncd's
 //! supervisor, holding a grant per kind whose capability's transport is `google_api`, lists the
 //! calendars, the contacts and the task lists of the rig's `FakeGoogle` and mirrors each as

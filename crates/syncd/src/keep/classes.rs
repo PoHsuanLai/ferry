@@ -1,8 +1,10 @@
 //! What syncd may keep of an account, and the grant that says so. syncd is a daemon of its own as
 //! far as consent goes (`org.quire.Sync`): its mirrors run only for an account it holds a
 //! `Storage` grant for, with usage `Background` and the class of the data (`Files` for the app
-//! folder, `Photos` for the Photos datasets). Nothing asks the person for these grants as a
-//! consent sheet: turning the sync switch on in Settings is the person's answer.
+//! folder, `Photos` for the Photos datasets). accountd asks the person for these grants in its
+//! consent sheet the first time a sync switch is turned on for an account, and keeps the answer.
+//! The grants are syncd's own, as accountd lists them for it, so a key is compared apart from
+//! the app, which is whoever accountd judges the connection to be.
 //!
 //! Photos on a Google account is the one exception to the `Storage` kind: Google Photos is an
 //! upload target and a picker import with APIs of their own, and their audiences belong to the
@@ -80,12 +82,24 @@ pub fn drive_key(account: &AccountId) -> GrantKey {
     }
 }
 
+/// Whether `grant` is under one of the `wanted` keys: the same but for the app, which accountd
+/// names itself ([`sync_app`] is what the caller table calls syncd).
+pub fn holds(grant: &Grant, wanted: &[GrantKey]) -> bool {
+    wanted.iter().any(|key| {
+        let key = GrantKey {
+            app: grant.key.app.clone(),
+            ..key.clone()
+        };
+        grant.key == key
+    })
+}
+
 /// Whether syncd holds an allowing grant of the whole drive of `account`.
 pub fn drive_allowed(grants: &[Grant], account: &AccountId) -> bool {
-    let wanted = drive_key(account);
+    let wanted = [drive_key(account)];
     grants
         .iter()
-        .any(|g| g.key == wanted && g.decision == Decision::Allow)
+        .any(|g| holds(g, &wanted) && g.decision == Decision::Allow)
 }
 
 /// Whether `account` is reached over a drive the listing reads whole: OneDrive (Graph) or
@@ -173,7 +187,7 @@ pub fn sync_allowed(grants: &[Grant], account: &AccountId, class: SyncClass) -> 
     let wanted = keys_of(account, class);
     grants
         .iter()
-        .any(|g| wanted.contains(&g.key) && g.decision == Decision::Allow)
+        .any(|g| holds(g, &wanted) && g.decision == Decision::Allow)
 }
 
 /// The need syncd's grant for `class` of `account` is asked under: the app folder's for Files,

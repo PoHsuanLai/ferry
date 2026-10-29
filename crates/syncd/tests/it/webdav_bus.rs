@@ -1,5 +1,5 @@
-//! syncd syncing a folder against a fake Nextcloud through its own account service's authenticated
-//! relay, on one private bus: the service (hosted in process over in-memory secrets) holds the app
+//! syncd syncing a folder against a fake Nextcloud through accountd's authenticated
+//! relay, on one private bus: accountd (hosted in process over in-memory secrets) holds the app
 //! password and runs the relay; syncd's replica gets only a stream and so no credential.
 //! `Sync1.Status` shows the quota the WebDAV server reports, and an expired sync token uploads
 //! nothing again.

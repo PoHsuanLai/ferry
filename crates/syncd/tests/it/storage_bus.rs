@@ -1,4 +1,4 @@
-//! syncd's storage supervisor against its own account service (hosted in process) and a fake
+//! syncd's storage supervisor against accountd (hosted in process) and a fake
 //! Graph drive on one private bus. A Storage grant on a Microsoft account (class Files) becomes a
 //! dataset that mirrors the app folder both ways; a two-sided edit is a `Conflict` signal with its
 //! number and `Resolve` settles it; a grant that goes (or an account that is removed) drops the

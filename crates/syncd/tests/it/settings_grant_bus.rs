@@ -1,7 +1,8 @@
-//! Settings lets syncd sync an account, end to end on one private bus: syncd's own settings module
-//! (`/org/quire/Sync1/settings`) over its own hosted account service, a Graph account that holds
-//! no grant, syncd's storage supervisor and a fake Graph drive. Switching "Keep this account's
-//! files on this computer" on makes the grant `org.quire.Sync` is asked for and the mirror starts;
+//! Settings lets syncd sync an account, end to end on one private bus: syncd's settings module
+//! (`/org/quire/Sync1/settings`) over accountd (hosted in process), a Graph account that holds no
+//! grant, syncd's storage supervisor and a fake Graph drive. Switching "Keep this account's files
+//! on this computer" on asks accountd for the grant, whose consent sheet shows once, and the mirror
+//! starts;
 //! off takes it back, the dataset goes and the files stay. The Photos row does the same for the
 //! Photos datasets, and is all that runs them. Nothing seeds a grant by hand. Only the Settings
 //! role may use the module.
@@ -9,7 +10,7 @@
 use crate::common;
 
 use common::bus::PrivateBus;
-use common::hosted::{Hosted, Link, NoDirectory, Service, host, keep};
+use common::hosted::{Hosted, Link, Service, host, keep};
 use common::{Known, client};
 use ds_settings::live::{AnyOwner, LiveClient};
 use ds_settings::schema::KeyPath;
@@ -24,12 +25,12 @@ use porter_core::{
 };
 use porter_fake::FakeProvider;
 use porter_fake_servers::Running;
-use porter_families::set::ProviderNames;
 use porter_ids::UnixSeconds;
 use porter_provider::Provider;
 use porter_secrets::{MemorySecrets, Secrets};
 use porter_service_core::registry::Registry;
 use std::sync::Arc;
+use std::sync::atomic::Ordering;
 use std::time::Duration;
 use syncd::datasets::pim::Wiring;
 use syncd::datasets::storage::{
@@ -152,12 +153,8 @@ async fn rig() -> Rig {
     .expect("paths");
 
     // The settings module, as the daemon serves it, with the callers the test names.
-    let own = keep(&hosted, NoDirectory, paths.clone(), hub.clone());
-    let module = SyncSettings::new(
-        Arc::new(own),
-        Arc::new(known.clone()),
-        ProviderNames::from_specs(std::slice::from_ref(&spec)),
-    );
+    let own = keep(&hosted, paths.clone(), hub.clone());
+    let module = SyncSettings::new(Arc::new(own), Arc::new(known.clone()));
     serve_settings(&server, module).await.expect("settings");
     let name = server.unique_name().expect("name").to_string();
     let settings_side = client(&bus, &known, "org.quire.Settings", CallerRole::Settings).await;
@@ -277,6 +274,18 @@ async fn switching_files_on_in_settings_starts_the_mirror_and_off_drops_it_but_k
         SyncClass::Files
     ));
     assert_eq!(held.len(), 1, "only the files grant");
+    assert_eq!(
+        rig.hosted.consents.load(Ordering::SeqCst),
+        1,
+        "accountd's consent sheet showed once"
+    );
+    // Turning it on again while its grant is held asks the person nothing more.
+    rig.settings
+        .set(&row(FILES_ROW), &word(true))
+        .await
+        .expect("on while on");
+    assert_eq!(rig.hosted.consents.load(Ordering::SeqCst), 1);
+    assert_eq!(grants(&rig).len(), 1);
 
     rig.supervisor.tick().await;
     assert_eq!(names(&rig, FILES_APP).await, [DATASET]);
@@ -394,7 +403,8 @@ async fn removing_the_account_in_the_rows_deletes_its_files_and_its_sign_in_here
         .await
         .expect("remove");
     assert!(!local(&rig, "note.txt").exists(), "its files are gone");
+    // The account stays in accountd; syncd's permission for it is taken back.
     let service: &Service = &rig.hosted.service;
-    assert!(service.registry().accounts.is_empty());
+    assert_eq!(service.registry().accounts.len(), 1);
     assert!(service.registry().grants.is_empty());
 }

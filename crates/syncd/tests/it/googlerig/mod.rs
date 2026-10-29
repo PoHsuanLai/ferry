@@ -1,4 +1,4 @@
-//! The rig of syncd's Google bus tests: syncd's own account service, hosted in process, with one
+//! The rig of syncd's Google bus tests: accountd, hosted in process, with one
 //! Google account whose Drive, Photos upload and Picker endpoints are the fake Google's, the grants
 //! syncd would hold, and a `StorageSupervisor` over them. The relay, not syncd, authenticates:
 //! the bearer is the fake provider's, and the credential the service holds appears nowhere.

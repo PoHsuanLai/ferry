@@ -3,14 +3,14 @@
 //!
 //! - `journal`: the SQLite journal of one dataset of one account (items, anchor, tombstones,
 //!   conflicts), every change one transaction.
-//! - `keep`: syncd's own accounts: its own store and keyring namespace (`porter.syncd`),
-//!   "Continue as" sign-in, the sync switches and removal. `settings`: the Settings module
-//!   (`org.quire.SettingsModule1`) over them.
+//! - `keep`: what syncd keeps of the accounts accountd has: the sync switches (each is a grant
+//!   accountd asks the person for the first time), "Show in Files" and removal, all through
+//!   porter-client. `settings`: the Settings module (`org.quire.SettingsModule1`) over them.
 //! - `daemon`: the daemon as one call, [`Config`] (typed; [`Config::from_env`] is the one place the
 //!   environment is read), [`Daemon::build`] and [`Daemon::run`]. The binary only parses its
 //!   arguments and calls these.
-// The PIM supervisor's future nests the whole account service's generics; peephole's caller
-// types (porter-dbus ProcCallers) take its layout past the default depth of 128.
+// peephole's caller types (porter-dbus ProcCallers) take the daemon's futures past the default
+// depth of 128.
 #![recursion_limit = "256"]
 pub mod clock;
 pub mod daemon;

@@ -1,6 +1,6 @@
 [package]
 name = "syncd"
-description = "ferry's sync daemon: org.quire.Sync1 over ferry-sync replicas. The library holds the SQLite journal, the engine over a Replica and a Dataset, the pure scheduler, the bus objects and syncd's own accounts (its own store, \"Continue as\" sign-in and Settings rows); the binary resolves its paths and serves. Datasets: the calendar, contacts and tasks mirror (CalDAV, CardDAV, Microsoft Graph and Google), the storage folder (WebDAV, OneDrive and Google Drive app folders), the whole drives shown in Files, and Photos for an account whose Photos row is on."
+description = "ferry's sync daemon: org.quire.Sync1 over ferry-sync replicas. The library holds the SQLite journal, the engine over a Replica and a Dataset, the pure scheduler, the bus objects and the Settings rows over the accounts accountd has (it reaches accounts, grants and relays only through porter-client); the binary resolves its paths and serves. Datasets: the calendar, contacts and tasks mirror (CalDAV, CardDAV, Microsoft Graph and Google), the storage folder (WebDAV, OneDrive and Google Drive app folders), the whole drives shown in Files, and Photos for an account whose Photos row is on."
 version.workspace = true
 edition.workspace = true
 license.workspace = true
@@ -9,38 +9,34 @@ repository.workspace = true
 publish.workspace = true
 
 [dependencies]
-porter-core = { workspace = true }
-porter-match = { workspace = true }
-porter-capability = { workspace = true }
-porter-sheet = { workspace = true }
-porter-wire = { workspace = true }
-porter-ids = { workspace = true }
-porter-daemon = { workspace = true }
-porter-fs = { workspace = true }
-porter-client = { workspace = true }
-porter-client-dbus = { workspace = true }
-porter-client-inproc = { workspace = true, features = ["relays"] }
-dav-proto = { workspace = true, features = ["discover"] }
-porter-callers = { workspace = true, features = ["file"] }
-porter-dbus = { workspace = true }
 ferry-bus = { workspace = true }
 ferry-drive = { workspace = true }
 ferry-drive-fuse = { workspace = true }
-porter-families = { workspace = true, features = ["set"] }
-porter-family-oauth = { workspace = true }
-porter-http = { workspace = true }
-porter-http-relay = { workspace = true }
-porter-provider = { workspace = true }
-porter-secrets = { workspace = true, features = ["oo7"] }
-porter-service = { workspace = true }
-porter-service-core = { workspace = true }
-porter-service-accounts = { workspace = true }
-porter-sheets = { workspace = true }
-porter-store = { workspace = true }
 ferry-sync = { workspace = true }
 storage-gdrive = { workspace = true }
 storage-graph = { workspace = true }
 storage-webdav = { workspace = true }
+windows-zones = { workspace = true }
+# Accounts, grants and relays: accountd's, reached through porter-client (the bus transport in
+# the daemon). Nothing of porter's account stack is a dependency of syncd; the dev-dependencies
+# host one in process for the tests.
+porter-client = { workspace = true }
+porter-client-dbus = { workspace = true }
+# What syncd serves: the callers it judges and the bus objects (`Call`, `Details`, `BusTarget`).
+porter-callers = { workspace = true, features = ["file"] }
+porter-dbus = { workspace = true }
+# Only `xdg`: the directories a daemon keeps its files under.
+porter-daemon = { workspace = true }
+# The vocabulary: needs, grants, ids, the parent window.
+porter-core = { workspace = true }
+porter-match = { workspace = true }
+porter-capability = { workspace = true }
+porter-wire = { workspace = true }
+porter-ids = { workspace = true }
+porter-fs = { workspace = true }
+dav-proto = { workspace = true, features = ["discover"] }
+porter-http = { workspace = true }
+porter-http-relay = { workspace = true }
 ds-settings = { workspace = true }
 clap = { workspace = true }
 rusqlite = { workspace = true }
@@ -50,7 +46,6 @@ chrono = { workspace = true }
 hex = { workspace = true }
 mime_guess = { workspace = true }
 nanohtml2text = { workspace = true }
-windows-zones = { workspace = true }
 sha2 = { workspace = true }
 thiserror = { workspace = true }
 # `signal`: SIGTERM unmounts the drives before the process ends.
@@ -65,11 +60,17 @@ syncd = { path = ".", features = ["testing"] }
 base64 = { workspace = true }
 tempfile = { workspace = true }
 ferry-fake-graph = { workspace = true }
+# The account service hosted in the test process, as the in-process transport of porter-client.
+porter-client-inproc = { workspace = true, features = ["relays"] }
 porter-fake = { workspace = true }
+porter-sheet = { workspace = true }
 porter-fake-servers = { workspace = true }
 porter-http-reqwest = { workspace = true }
-ferry-drive = { workspace = true, features = ["testing"] }
+porter-provider = { workspace = true }
 porter-secrets = { workspace = true, features = ["testing"] }
+porter-service = { workspace = true }
+porter-service-core = { workspace = true }
+ferry-drive = { workspace = true, features = ["testing"] }
 ferry-sync = { workspace = true, features = ["testing"] }
 # The words the fake of Storage1 gives are held to the live ones (tests/it/fake_words.rs).
 syncd-fakes = { workspace = true }
@@ -87,12 +88,6 @@ workspace = true
 # variables. A test in tests/dist.rs fails if this feature is ever default, and
 # check-boundary.sh checks it too.
 test-proc-root = ["porter-callers/test-proc-root"]
-# Test builds only, never default and never in dist: `SYNCD_KEYS=file:<absolute path>` keeps
-# syncd's own credentials in one 0600 plain-text JSON file (porter-secrets' `FileSecrets`)
-# instead of the Secret Service, for private-bus and scratch runs with no keyring. A release
-# build ignores the variable and says so once. tests/dist.rs and check-boundary.sh fail if this
-# feature is default.
-test-keys = ["porter-secrets/test-keys"]
 # `MemoryDataset`, the in-memory local side the engine's tests (and daemon tests) drive.
 testing = []
 # Serves `org.quire.Photos1.Picker` beside Sync1 (ferry-bus's feature of the same name declares

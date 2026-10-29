@@ -1,5 +1,5 @@
-//! "Show in Files", end to end on one private bus: syncd's own settings module over its own
-//! hosted account service, a Microsoft-shaped account signed in before it was given the whole
+//! "Show in Files", end to end on one private bus: syncd's settings module over accountd (hosted
+//! in process), a Microsoft-shaped account signed in before it was given the whole
 //! drive (its record claims only the app folder), syncd's storage supervisor and a fake Graph
 //! drive. Turning the row on asks the person for the whole drive in a sign-in of its own, then
 //! records syncd's grant of it, and the supervisor lists the drive; refused, the row reads off with
@@ -12,7 +12,7 @@
 use crate::common;
 
 use common::bus::PrivateBus;
-use common::hosted::{Hosted, Link, NoDirectory, Service, host_with};
+use common::hosted::{Hosted, Link, Service, host_with};
 use common::{Known, client};
 use ds_settings::live::{AnyOwner, LiveClient};
 use ds_settings::schema::KeyPath;
@@ -31,7 +31,6 @@ use porter_core::{
 };
 use porter_fake::{FakeProvider, ScriptedSheets};
 use porter_fake_servers::Running;
-use porter_families::set::ProviderNames;
 use porter_ids::UnixSeconds;
 use porter_provider::Provider;
 use porter_secrets::{MemorySecrets, Secrets};
@@ -209,14 +208,10 @@ async fn build(
             ..StorageConfig::default()
         },
     );
-    let own = common::hosted::keep(&hosted, NoDirectory, paths.clone(), hub.clone())
+    let own = common::hosted::keep(&hosted, paths.clone(), hub.clone())
         .with_drives(supervisor.drive_set());
-    let module = SyncSettings::new(
-        Arc::new(own),
-        Arc::new(known.clone()),
-        ProviderNames::from_specs(std::slice::from_ref(&spec)),
-    )
-    .with_cache_limit(supervisor.cache_knob(), paths.settings.clone());
+    let module = SyncSettings::new(Arc::new(own), Arc::new(known.clone()))
+        .with_cache_limit(supervisor.cache_knob(), paths.settings.clone());
     serve_settings(&server, module).await.expect("settings");
     let name = server.unique_name().expect("name").to_string();
     let settings_side = client(&bus, &known, "org.quire.Settings", CallerRole::Settings).await;
