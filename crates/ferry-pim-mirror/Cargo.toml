@@ -34,5 +34,9 @@ tokio = { workspace = true }
 ferry-sync = { workspace = true, features = ["testing"] }
 tempfile = { workspace = true }
 
+[features]
+# `Catalog::seeded`, a catalog that lists what a test says, for the tests of whatever serves it.
+testing = []
+
 [lints]
 workspace = true

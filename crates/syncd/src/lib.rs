@@ -4,7 +4,7 @@
 //! running datasets) is `ferry-engine`'s, and the PIM mirror and the vdir are `ferry-pim-mirror`'s
 //! and `ferry-vdir`'s. What is syncd's:
 //!
-//! - `datasets`: the datasets it carries (contacts and calendars, the storage folder, the whole
+//! - `datasets`: the datasets it carries (contacts, the storage folder, the whole
 //!   drives shown in Files, Photos) and the supervisors that turn a grant into a running one.
 //! - `keep`: what syncd keeps of the accounts accountd has: the sync switches (each is a grant
 //!   accountd asks the person for the first time), "Show in Files" and removal, all through

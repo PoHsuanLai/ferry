@@ -37,6 +37,12 @@ impl Catalog {
         self.held().clone()
     }
 
+    /// A catalog that already lists `collections`, for the tests of whatever serves them.
+    #[cfg(any(test, feature = "testing"))]
+    pub fn seeded(collections: Vec<Collection>) -> Self {
+        Self(Arc::new(Mutex::new(collections)))
+    }
+
     pub(crate) fn replace(&self, all: Vec<Collection>) {
         *self.held() = all;
     }

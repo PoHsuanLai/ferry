@@ -6,20 +6,19 @@
 mod binary;
 mod common;
 mod confirm_bus;
+mod contacts_bus;
 mod daemon;
 mod dist;
 mod drive_listing;
 mod fake_words;
 mod gdrive_bus;
-mod google_pim_bus;
+mod google_contacts_bus;
 mod googlerig;
 mod gphotos_bus;
 mod graph_bus;
-mod graph_calendar_bus;
 mod install;
 #[cfg(feature = "photos-picker")]
 mod photos_picker_bus;
-mod pim_bus;
 mod resolve_bus;
 mod retry_bus;
 mod settings_grant_bus;

@@ -296,7 +296,7 @@ mod tests {
     fn metadata_never_makes_a_collection_whose_directory_is_gone() {
         // The account was removed and its mirror deleted between the supervisor's look at the
         // collections and its write of their names: nothing comes back (rel-13 follow-up, the
-        // pim_bus removal test that found the account's directory again).
+        // removal test that found the account's directory again).
         let _root_guard = scratch("meta-gone");
         let root = _root_guard.path().to_owned();
         let dir = root.join("account").join("personal");

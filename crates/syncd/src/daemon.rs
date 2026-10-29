@@ -11,8 +11,8 @@
 //! a `watch::Receiver<Network>`: NetworkManager is not read yet, so the binary hands in a
 //! receiver that says "unmetered and up" for good.
 
+use crate::datasets::contacts::ContactSources;
 use crate::datasets::photos::Millis;
-use crate::datasets::pim::SyncdSources;
 use crate::datasets::storage::DriveMount;
 use crate::datasets::storage::{ClientStorageGrants, StorageConfig, StorageSupervisor, Wiring};
 use crate::keep::Keep;
@@ -74,7 +74,7 @@ pub struct Config {
     pub paths: Paths,
     /// A directory to read callers from in place of `/proc`; `Some` only in a test build.
     pub proc_root: Option<PathBuf>,
-    /// The calendar and address book supervisor.
+    /// The address book supervisor.
     pub pim: PimConfig,
     /// The storage supervisor.
     pub storage: StorageConfig,
@@ -259,7 +259,7 @@ impl Daemon {
                 nonce: nonce.clone(),
             },
             ClientGrants::new(Arc::clone(&accounts)),
-            SyncdSources,
+            ContactSources,
             pim,
         )
         .spawn();

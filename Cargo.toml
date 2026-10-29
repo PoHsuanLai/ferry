@@ -16,7 +16,6 @@ members = [
   "crates/storage-graph",
   "crates/storage-gdrive",
   "crates/quickxorhash",
-  "crates/windows-zones",
   "crates/syncd",
   "crates/syncd-fakes",
 ]
@@ -45,7 +44,6 @@ storage-webdav  = { path = "crates/storage-webdav" }
 storage-graph   = { path = "crates/storage-graph" }
 storage-gdrive  = { path = "crates/storage-gdrive" }
 quickxorhash    = { path = "crates/quickxorhash" }
-windows-zones   = { path = "crates/windows-zones" }
 syncd           = { path = "crates/syncd" }
 syncd-fakes     = { path = "crates/syncd-fakes" }
 
@@ -109,14 +107,8 @@ clap = { version = "4", features = ["derive"] }
 tempfile = "3"
 # ferry-drive's cached byte ranges (MIT OR Apache-2.0, 1.8.0).
 rangemap = "1.8"
-# Calendar dates and RFC 3339 times (MIT OR Apache-2.0). No default features: no system clock, no
-# time zone database, no locale; `alloc` is for `format`.
-chrono = { version = "0.4", default-features = false, features = ["alloc"] }
 # syncd's media type by extension (MIT, 2.0.5).
 mime_guess = { version = "2", default-features = false }
-# syncd's HTML-to-text of a Graph event body (MIT, 0.3.0, no dependencies; html2text brings
-# html5ever and its tree for a task this small).
-nanohtml2text = "0.3"
 # ferry-mountd's socket activation (Apache-2.0, 1.0.2; brings libc).
 listenfd = "1"
 # syncd's journal: SQLCipher built from source with a vendored OpenSSL, used unkeyed (quire's pinned line).

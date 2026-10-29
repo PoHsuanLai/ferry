@@ -28,7 +28,6 @@ PORTER_HIDDEN="porter-dbus porter-callers porter-service porter-service-core por
 LIBRARY_HIDDEN="reqwest hyper ureq oo7 keyring secret-service interprocess latchkey ds-settings porter-dbus porter-service porter-service-core porter-service-accounts porter-secrets porter-store porter-sheets porter-client-dbus porter-client-inproc"
 RULES=(
   "quickxorhash: $EFFECTS"
-  "windows-zones: $EFFECTS"
   "ferry-sync: $EFFECTS $PORTER_HIDDEN"
   "ferry-vdir: $EFFECTS $PORTER_HIDDEN"
   "ferry-pim-feed: $EFFECTS $PORTER_HIDDEN"
@@ -95,7 +94,6 @@ ratchet() {
 ratchet "a hand-rolled percent encoder or decoder" 'fn percent_(en|de)code\b' "" "porter_ids::percent"
 ratchet "hand-rolled civil-date arithmetic" '(days_from_civil|civil_from_days|719_468)' "" "chrono"
 ratchet "a hand-written MD5 (its first round constant)" '0xd76aa478' "" "md-5"
-ratchet "a second Windows-to-IANA zone table" 'Pacific Standard Time", *"America/Los_Angeles' "crates/windows-zones/" "windows_zones::iana"
 ratchet "a hand-written scratch directory type" '^[[:space:]]*(pub(\([a-z]+\))? )?struct Scratch\b' "" "test_kit::Scratch"
 
 # ACCOUNTS ONLY THROUGH PORTER-CLIENT: accounts, grants, tokens and relays are accountd's. No crate
@@ -130,7 +128,6 @@ fi
 # it.
 EDGES=(
   "quickxorhash:"
-  "windows-zones:"
   "ferry-sync: porter-capability porter-ids porter-http"
   "ferry-vdir: porter-core porter-fs"
   "ferry-pim-feed: ferry-sync ferry-vdir porter-capability porter-core porter-http porter-ids"
@@ -146,7 +143,7 @@ EDGES=(
   "ferry-fake-graph: porter-core porter-fake porter-fake-servers porter-ids porter-provider quickxorhash"
   "ferry-rig: ferry-bus ferry-fake-graph porter-dbus porter-fake-servers porter-rig"
   "syncd-fakes: ferry-bus porter-dbus"
-  "syncd: ds-settings ferry-engine ferry-pim-feed ferry-pim-mirror ferry-vdir porter-client porter-client-dbus porter-core porter-match porter-capability porter-wire porter-ids porter-daemon porter-callers porter-dbus porter-fs porter-http porter-http-relay ferry-bus ferry-drive ferry-drive-fuse ferry-sync storage-gdrive storage-graph storage-webdav windows-zones"
+  "syncd: ds-settings ferry-engine ferry-pim-feed ferry-pim-mirror ferry-vdir porter-client porter-client-dbus porter-core porter-match porter-capability porter-wire porter-ids porter-daemon porter-callers porter-dbus porter-fs porter-http porter-http-relay ferry-bus ferry-drive ferry-drive-fuse ferry-sync storage-gdrive storage-graph storage-webdav"
 )
 for edge in "${EDGES[@]}"; do
   crate="${edge%%:*}"

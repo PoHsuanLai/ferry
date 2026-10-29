@@ -1,6 +1,6 @@
 [package]
 name = "syncd"
-description = "ferry's sync daemon: org.quire.Sync1 over ferry-sync replicas. The library holds the SQLite journal, the engine over a Replica and a Dataset, the pure scheduler, the bus objects and the Settings rows over the accounts accountd has (it reaches accounts, grants and relays only through porter-client); the binary resolves its paths and serves. Datasets: the calendar, contacts and tasks mirror (CalDAV, CardDAV, Microsoft Graph and Google), the storage folder (WebDAV, OneDrive and Google Drive app folders), the whole drives shown in Files, and Photos for an account whose Photos row is on."
+description = "ferry's sync daemon: org.quire.Sync1 over ferry-sync replicas. The library holds the datasets and their supervisors (run with ferry-engine's journal, engine, scheduler and hub), the bus objects and the Settings rows over the accounts accountd has (it reaches accounts, grants and relays only through porter-client); the binary resolves its paths and serves. Datasets: the contacts mirror (CardDAV and Google; calendars and tasks are callie's calendard), the storage folder (WebDAV, OneDrive and Google Drive app folders), the whole drives shown in Files, and Photos for an account whose Photos row is on."
 version.workspace = true
 edition.workspace = true
 license.workspace = true
@@ -21,7 +21,6 @@ ferry-vdir = { workspace = true }
 storage-gdrive = { workspace = true }
 storage-graph = { workspace = true }
 storage-webdav = { workspace = true }
-windows-zones = { workspace = true }
 # Accounts, grants and relays: accountd's, reached through porter-client (the bus transport in
 # the daemon). Nothing of porter's account stack is a dependency of syncd; the dev-dependencies
 # host one in process for the tests.
@@ -46,10 +45,8 @@ clap = { workspace = true }
 rusqlite = { workspace = true }
 serde = { workspace = true }
 serde_json = { workspace = true }
-chrono = { workspace = true }
 hex = { workspace = true }
 mime_guess = { workspace = true }
-nanohtml2text = { workspace = true }
 sha2 = { workspace = true }
 thiserror = { workspace = true }
 # `signal`: SIGTERM unmounts the drives before the process ends.

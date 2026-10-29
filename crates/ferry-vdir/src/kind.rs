@@ -14,9 +14,6 @@ pub enum PimKind {
 }
 
 impl PimKind {
-    /// Every kind.
-    pub const ALL: [PimKind; 3] = [PimKind::Calendar, PimKind::Contacts, PimKind::Tasks];
-
     /// The file extension of an item, with its dot.
     pub fn extension(self) -> &'static str {
         match self {
